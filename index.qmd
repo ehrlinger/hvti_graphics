@@ -1,0 +1,5 @@
+# Preface {.unnumbered}
+
+This is a Quarto book. <https://quarto.org/docs/books>.
+
+The books is comprised of chapters collected into "parts" for easy editing and navigation. Each chapter is created from a single `.qmd` file. 

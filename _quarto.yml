@@ -1,0 +1,56 @@
+project:
+  type: book
+
+book:
+  title: "HVTI ggplot graphics recipes"
+  author: "John Ehrlinger <ehrlinj@ccf.org>"
+  date: today
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - part: gettingstarted.qmd
+      chapters:
+        - packages.qmd
+        - usingR.qmd
+    - part: figures.qmd
+      chapters:
+        - scatter.qmd
+        - survival.qmd
+        - histograms.qmd
+        - density.qmd
+        - bar.qmd
+        - boxplots.qmd
+        - spaghetti.qmd
+        - postagestamp.qmd
+        - specialty.qmd
+        - combination.qmd
+    - part: tables.qmd
+      chapters:
+        - qt_tables.qmd
+        - figure_tables.qmd
+    - part: formatting.qmd
+      chapters:
+        - annotation.qmd
+        - themes.qmd
+        - colors.qmd
+        - legends.qmd
+    - part: publications.qmd
+      chapters:
+        - manuscripts.qmd
+        - researchday.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+    number-sections: true
+  pdf:
+    documentclass: scrreprt
+
+editor: source
+
