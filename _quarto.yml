@@ -5,6 +5,12 @@ book:
   title: "HVTI ggplot graphics recipes"
   author: "John Ehrlinger <ehrlinj@ccf.org>"
   date: today
+  page-navigation: true
+  page-footer: 
+    left: "Copyright 2025, John Ehrlinger" 
+    right: 
+      - icon: github
+        href: https://github.com/ehrlinger/hvti_graphics
   chapters:
     - index.qmd
     - intro.qmd
@@ -20,6 +26,7 @@ book:
         - density.qmd
         - bar.qmd
         - boxplots.qmd
+        - upset.qmd
         - spaghetti.qmd
         - postagestamp.qmd
         - specialty.qmd
@@ -49,7 +56,7 @@ format:
       - cosmo
       - brand
     number-sections: true
-  pdf:
+  typst:
     documentclass: scrreprt
 
 editor: source

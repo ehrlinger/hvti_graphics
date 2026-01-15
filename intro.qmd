@@ -2,5 +2,6 @@
 
 This book is intended to be a single source of GGPlot2 @Wickham2009 recipes for generating publication quality plots for HVTI CORR publications and presentations. The compendium is collected from figures we have included over the course of publications.
 
-The book is divided into multiple parts collecting different bits of information. @sec-gettingstarted gives a brief introduction to how we use R and which packages we use to create figures.
+The book is divided into multiple parts collecting different bits of information. @sec-getstarted gives a brief introduction to how we use R and which packages we use to create figures.
 
+[pdf document](https://clevelandclinic.sharepoint.com/:b:/t/CORRDeptIntranet/EecPuzSkVclNhcPxHdxLCVoBm8-UzmOOq62UG_-EofpE7w?e=ZJmcrs)

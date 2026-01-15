@@ -1,0 +1,12 @@
+# Venn diagrams and UpSet plots
+
+To show non-distinct groups and understand overlapping groupings, we turn to VENN diagrams, and UpSet plots. The general rule to show no more than four groups in VENN diagrams. If there are more than four groups, we look at UpSet Plots.
+
+
+## VENN diagrams
+
+
+## Upset plots
+
+
+https://www.gl-eb.me/blog/posts/2025-11-02_upset/

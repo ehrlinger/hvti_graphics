@@ -1,4 +1,4 @@
-# Getting Started {#sec-gettingstarted}
+# Getting Started {#sec-getstarted}
 
 We have to start somewhere, so we give a brief introduction to using R and packages we regularly use when generating ggplot2 @Wickham2009 publication figures.
 

@@ -241,7 +241,7 @@
 \title{HVTI ggplot graphics recipes}
 \author{John Ehrlinger
 \href{mailto:ehrlinj@ccf.org}{\nolinkurl{ehrlinj@ccf.org}}}
-\date{2025-10-27}
+\date{2025-11-03}
 \begin{document}
 \maketitle
 
@@ -269,20 +269,23 @@ editing and navigation. Each chapter is created from a single
 
 \chapter{Introduction}\label{introduction}
 
-This book is intended to be a single source of GGPlot2
-(\textbf{Wickham:2009?}) recipes for generating publication quality
-plots for HVTI CORR publications and presentations. The compendium is
-collected from figures we have included over the course of publications.
+This book is intended to be a single source of GGPlot2 Wickham (2009)
+recipes for generating publication quality plots for HVTI CORR
+publications and presentations. The compendium is collected from figures
+we have included over the course of publications.
 
 The book is divided into multiple parts collecting different bits of
-information. \textbf{?@sec-gettingstarted} gives a brief introduction to
-how we use R and which packages we use to create figures.
+information. \textbf{?@sec-getstarted} gives a brief introduction to how
+we use R and which packages we use to create figures.
+
+\href{https://clevelandclinic.sharepoint.com/:b:/t/CORRDeptIntranet/EecPuzSkVclNhcPxHdxLCVoBm8-UzmOOq62UG_-EofpE7w?e=ZJmcrs}{pdf
+document}
 
 \part{Getting Started}
 
 We have to start somewhere, so we give a brief introduction to using R
-and packages we regularly use when generating ggplot2
-(\textbf{Wickham:2009?}) publication figures.
+and packages we regularly use when generating ggplot2 Wickham (2009)
+publication figures.
 
 \chapter{Packages}\label{packages}
 
@@ -422,6 +425,20 @@ See Knuth (1984) for additional discussion of literate programming.
 [1] 2
 \end{verbatim}
 
+\chapter{Venn diagrams and UpSet
+plots}\label{venn-diagrams-and-upset-plots}
+
+To show non-distinct groups and understand overlapping groupings, we
+turn to VENN diagrams, and UpSet plots. The general rule to show no more
+than four groups in VENN diagrams. If there are more than four groups,
+we look at UpSet Plots.
+
+\section{VENN diagrams}\label{venn-diagrams}
+
+\section{Upset plots}\label{upset-plots}
+
+https://www.gl-eb.me/blog/posts/2025-11-02\_upset/
+
 \chapter{Spaghetti Plots}\label{spaghetti-plots}
 
 This is a book created from markdown and executable code.
@@ -486,17 +503,12 @@ See Knuth (1984) for additional discussion of literate programming.
 
 \part{Using tables}
 
-See Knuth (1984) for additional discussion of literate programming.
-
 \begin{Shaded}
 \begin{Highlighting}[]
-\DecValTok{1} \SpecialCharTok{+} \DecValTok{1}
+\FunctionTok{library}\NormalTok{(gt)}
+\FunctionTok{library}\NormalTok{(gtsummary)}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-[1] 2
-\end{verbatim}
 
 \chapter{Publication tables}\label{publication-tables}
 
@@ -681,6 +693,10 @@ In summary, this book has no content whatsoever.
 \bibitem[\citeproctext]{ref-knuth84}
 Knuth, Donald E. 1984. {``Literate Programming.''} \emph{Comput. J.} 27
 (2): 97--111. \url{https://doi.org/10.1093/comjnl/27.2.97}.
+
+\bibitem[\citeproctext]{ref-Wickham2009}
+Wickham, Hadley. 2009. \emph{Ggplot2: Elegant Graphics for Data
+Analysis}. Springer New York.
 
 \end{CSLReferences}
 
