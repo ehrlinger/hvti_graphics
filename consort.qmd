@@ -1,1 +1,94 @@
 # CONSORT patient-flow diagrams
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
+`hv_consort()` builds a CONSORT-style patient-flow diagram via a multi-step
+API: `hv_consort_start()` initializes a patient-level tracker,
+`hv_consort_exclude()` adds exclusion stages, and `hv_consort()` renders the
+result. The diagram is drawn by the `consort` package (grid graphics), so it
+is **not** a `ggplot` — do not decorate it with `+` or `theme_*()`.
+
+## Sample data
+
+`sample_consort_data()` simulates a cardiac-surgery cohort and returns a
+three-stage `hv_consort_tracker`.
+
+```{r}
+#| label: consort_sample
+tracker <- sample_consort_data(n = 300, seed = 42)
+tracker
+```
+
+## Building a tracker from your own data
+
+Start from a data frame with one row per patient. `hv_consort_start()` records
+the patient identifier and marks every patient as screened; each
+`hv_consort_exclude()` call adds an exclusion stage. Exclusion rules are
+two-sided formulas — `<condition> ~ "<reason>"` — evaluated against the data.
+The first matching rule wins, and patients dropped earlier are skipped later,
+so each stage operates only on the survivors of the last.
+
+```{r}
+#| label: consort_build
+set.seed(42)
+cohort <- data.frame(
+  mrn         = paste0("P", 1:300),
+  age         = sample(12:85, 300, replace = TRUE),
+  had_surgery = sample(c(TRUE, FALSE), 300, replace = TRUE, prob = c(0.9, 0.1)),
+  echo        = sample(c(TRUE, FALSE), 300, replace = TRUE, prob = c(0.85, 0.15))
+)
+
+tracker2 <- hv_consort_start(cohort, patient_id = mrn, label = "Screened") |>
+  hv_consort_exclude(
+    label        = "Eligible",
+    col          = "excl_screen",
+    age < 18     ~ "Age < 18",
+    !had_surgery ~ "No qualifying surgery"
+  ) |>
+  hv_consort_exclude(
+    label = "Analyzed",
+    col   = "excl_eligible",
+    !echo ~ "Missing echocardiogram"
+  )
+tracker2
+```
+
+## The diagram
+
+`hv_consort()` derives the box layout from the tracker's stage metadata;
+`plot()` draws it. Every exclusion column is shown as a side box by default —
+pass a character vector to `side_box` to select specific ones.
+
+```{r}
+#| label: consort_plot
+fig <- hv_consort(tracker)
+plot(fig)
+```
+
+## Auditing the cohort
+
+`hv_consort_summary()` returns a per-stage count table suitable for a methods
+section:
+
+```{r}
+#| label: consort_summary
+hv_consort_summary(tracker)
+```
+
+`hv_consort_patients()` returns the patient IDs active at a stage, or the
+subset excluded for a specific reason:
+
+```{r}
+#| label: consort_patients
+# IDs still in the analysed cohort
+head(hv_consort_patients(tracker, "Analyzed"))
+
+# IDs dropped at screening for being under 18
+head(hv_consort_patients(tracker, "Screened", reason = "Age < 18"))
+```
