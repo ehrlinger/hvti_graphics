@@ -1,7 +1,111 @@
 # Publication tables
 
-See @knuth84 for additional discussion of literate programming.
+For a thorough treatment of effective display tables in `gt`, see
+Rich Iannone's guide:
+<https://rich-iannone.github.io/gt-effective-display-tables/>.
 
 ```{r}
-1 + 1
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(gt)
+library(dplyr)
+library(hvtiPlotR)
 ```
+
+This chapter builds publication-ready tables directly with the `gt`
+package. The recipes here are deliberately self-contained; once a
+dedicated table package matures, **these tables will migrate to the
+planned hvtiRtables package** and the call sites will collapse to a
+single helper.
+
+## A "Table 1" baseline-characteristics summary
+
+The canonical first table in any clinical manuscript is a
+baseline-characteristics summary ("Table 1"): rows of patient
+characteristics, columns split by treatment or exposure group. We build
+one from `hvtiRutilities::generate_survival_data()`, which returns a
+richly labelled patient-level cohort with a natural grouping variable
+(`sex`).
+
+```{r}
+#| label: t1_data
+dta <- hvtiRutilities::generate_survival_data(n = 200, seed = 42)
+str(dta[, c("sex", "age", "bmi", "gfr_bs", "diabetes")])
+```
+
+### Summarise numeric variables as mean ± SD
+
+We summarise three continuous baseline variables (age, BMI, baseline
+eGFR) as mean and standard deviation within each `sex` group.
+
+```{r}
+#| label: t1_numeric
+num_summary <- dta |>
+  group_by(sex) |>
+  summarise(
+    n        = dplyr::n(),
+    age_mean = mean(age),     age_sd = sd(age),
+    bmi_mean = mean(bmi),     bmi_sd = sd(bmi),
+    gfr_mean = mean(gfr_bs),  gfr_sd = sd(gfr_bs),
+    .groups  = "drop"
+  )
+num_summary
+```
+
+### Summarise a categorical variable as n (%)
+
+Diabetes status is summarised as a count and within-group percentage.
+
+```{r}
+#| label: t1_categorical
+cat_summary <- dta |>
+  group_by(sex) |>
+  summarise(
+    diabetes_n   = sum(diabetes == "Yes"),
+    diabetes_pct = 100 * mean(diabetes == "Yes"),
+    .groups      = "drop"
+  )
+cat_summary
+```
+
+### Render with `gt()`
+
+We join the two summaries and present the result with a header, relabelled
+columns, and consistent numeric formatting. Mean ± SD pairs are formatted
+to one decimal place; the diabetes percentage to one decimal place.
+
+```{r}
+#| label: t1_gt
+table1 <- num_summary |>
+  left_join(cat_summary, by = "sex") |>
+  gt(rowname_col = "sex") |>
+  tab_header(
+    title    = "Table 1. Baseline Characteristics by Sex",
+    subtitle = "Simulated cohort, n = 200"
+  ) |>
+  cols_label(
+    n            = "N",
+    age_mean     = "Age (mean)",
+    age_sd       = "Age (SD)",
+    bmi_mean     = "BMI (mean)",
+    bmi_sd       = "BMI (SD)",
+    gfr_mean     = "eGFR (mean)",
+    gfr_sd       = "eGFR (SD)",
+    diabetes_n   = "Diabetes (n)",
+    diabetes_pct = "Diabetes (%)"
+  ) |>
+  fmt_number(
+    columns  = c(age_mean, age_sd, bmi_mean, bmi_sd,
+                 gfr_mean, gfr_sd, diabetes_pct),
+    decimals = 1
+  ) |>
+  tab_spanner(label = "Age (years)",  columns = c(age_mean, age_sd)) |>
+  tab_spanner(label = "BMI (kg/m²)",  columns = c(bmi_mean, bmi_sd)) |>
+  tab_spanner(label = "eGFR (mL/min)", columns = c(gfr_mean, gfr_sd))
+
+table1
+```
+
+The table renders as static HTML in the book and as a publication-quality
+PDF or Word object when the document is rendered to those formats.
