@@ -1,1 +1,76 @@
 # Predicted response and survival
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(randomForestSRC)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+For a survival forest, the prediction is not a single number but an entire
+**survival curve** for each observation. `gg_rfsrc()` extracts these predicted
+curves so they can be plotted directly. This chapter shows two views: the
+per-observation curves, and a population summary stratified by a grouping
+variable.
+
+## Per-observation predicted survival
+
+`gg_rfsrc(object)` returns one out-of-bag predicted survival curve per subject.
+Plotting them all together shows the spread of predicted risk across the
+cohort.
+
+```{r}
+#| label: rf-fit
+data(veteran, package = "randomForestSRC")
+rf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100)
+plot(gg_rfsrc(rf)) + theme_hv_manuscript()
+```
+
+Each line is one patient's predicted survival probability over time. The fan of
+curves is the forest's picture of heterogeneity in the cohort: low-risk
+subjects stay high, high-risk subjects drop early.
+
+## Predicted survival by group
+
+To compare groups, pass `by =` to `gg_rfsrc()`. It averages the predicted
+curves within each level of the grouping variable, giving a model-based
+analogue of stratified survival. We switch to the `pbc` primary biliary
+cirrhosis trial, which has a randomized `treatment` variable.
+
+```{r}
+#| label: rf-by-group
+data(pbc, package = "randomForestSRC")
+rf2 <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100)
+plot(gg_rfsrc(rf2, by = "treatment")) + theme_hv_manuscript()
+```
+
+The two treatment arms track closely, consistent with the trial's null
+finding -- but now the comparison comes from the full multivariable forest, not
+a univariate split.
+
+## Aside: empirical survival with `gg_survival()`
+
+`gg_rfsrc()` shows the *model's* predicted survival. When you want the raw
+**empirical** (Kaplan-Meier-style) survival of the data instead, use
+`gg_survival()`. It works directly on the data frame -- no forest required --
+taking the time `interval`, the `censor` indicator, an optional `by` grouping,
+and the `data`.
+
+```{r}
+#| label: gg-survival
+gg_dta <- gg_survival(
+  interval = "days",
+  censor   = "status",
+  by       = "treatment",
+  data     = pbc
+)
+plot(gg_dta) + theme_hv_manuscript() +
+  labs(y = "Survival probability", x = "Time (days)")
+```
+
+The empirical curves and the forest-predicted curves should tell a consistent
+story; divergence between them is itself diagnostic of how much the other
+covariates are doing in the model.
