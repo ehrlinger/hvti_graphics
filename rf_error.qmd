@@ -1,1 +1,55 @@
 # Random forest error convergence
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(randomForestSRC)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+A random forest is an *ensemble*: predictions are averaged over many trees.
+The first practical question is always "how many trees are enough?" The
+out-of-bag (OOB) error answers it directly. Each observation is predicted only
+by the trees that did **not** see it during training, so the OOB error is an
+honest, cross-validation-like estimate computed for free while the forest
+grows.
+
+## Fit the forest
+
+We use the `veteran` survival data again and grow 100 trees.
+
+```{r}
+#| label: rf-fit
+data(veteran, package = "randomForestSRC")
+rf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100)
+rf
+```
+
+## Plot the error curve
+
+`gg_error()` pulls the cumulative OOB error -- for survival forests this is
+`1 - C-index`, where lower is better -- after each additional tree. The result
+plots as error against the number of trees.
+
+```{r}
+#| label: gg-error
+plot(gg_error(rf)) + theme_hv_manuscript()
+```
+
+## Reading the curve
+
+- The curve drops quickly while the first few dozen trees are added: each new
+  tree still carries information the ensemble did not already have.
+- It then **flattens into a tail**. A flat tail means additional trees no
+  longer change the prediction -- the forest has converged and you have grown
+  enough trees.
+- If the tail were still trending downward at the right edge, that is your
+  signal to refit with a larger `ntree`.
+
+Here the curve is essentially flat well before 100 trees, so for this small
+dataset 100 trees is adequate. Always glance at `gg_error()` before trusting
+any downstream importance or dependence plot: those are only as stable as the
+underlying forest.
