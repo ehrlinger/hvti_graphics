@@ -1,9 +1,218 @@
 # Histogram Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+## Mirrored propensity-score histogram
+
+In propensity-matched analyses we routinely produce a mirrored histogram to
+show how well matching compressed the overlap between two treatment groups.
+`hv_mirror_hist()` prepares the data; `plot()` hands back a bare ggplot to
+dress with colour and labels. Two display modes are selected by the
+constructor arguments: **binary-match mode** (`match_col`) shows all
+observations before matching with the matched subset overlaid, and **weighted
+IPTW mode** (`weight_col`) shows raw counts with per-bin IPTW weight sums
+overlaid.
+
+### Binary-match mode (SAVR vs. TF-TAVR)
+
+`sample_mirror_histogram_data()` simulates 2,000 patients with a continuous
+propensity score (`prob_t`), a binary group indicator (`tavr`), and a match
+flag (`match`). `score_multiplier = 100` puts the score on a 0--100 percent
+scale and `binwidth = 5` sets 5-point bins.
 
 ```{r}
-1 + 1
+#| label: mirror_histogram_build
+mirror_dta <- sample_mirror_histogram_data(n = 2000, separation = 1.5)
+
+mh <- hv_mirror_hist(
+  data             = mirror_dta,
+  score_col        = "prob_t",
+  group_col        = "tavr",
+  match_col        = "match",
+  group_levels     = c(0, 1),
+  group_labels     = c("SAVR", "TF-TAVR"),
+  matched_value    = 1,
+  score_multiplier = 100,
+  binwidth         = 5
+)
+```
+
+The bare panel shows two mirrored bar charts — upper bars for the first group,
+lower for the second — with white fill and no scale, label, or theme yet.
+
+```{r}
+#| label: mirror_histogram_bare
+p <- plot(mh, alpha = 0.8)
+p
+```
+
+`scale_fill_manual()` maps the four internal fill levels (`before_g0`,
+`matched_g0`, `before_g1`, `matched_g1`) to white (pre-match) and two greens
+(matched subsets). The annotations use `y = Inf`/`-Inf` with `vjust` to anchor
+labels at the panel edges; `theme_hv_poster()` sizes text for a conference
+poster.
+
+```{r}
+#| label: mirror_histogram_decorated
+p +
+  ggplot2::scale_fill_manual(
+    values = c(
+      before_g0  = "white",  matched_g0 = "green1",
+      before_g1  = "white",  matched_g1 = "green4"
+    ),
+    guide = "none"
+  ) +
+  ggplot2::scale_x_continuous(
+    limits = c(0, 100),
+    breaks = seq(0, 100, 10)
+  ) +
+  ggplot2::scale_y_continuous(labels = abs) +
+  ggplot2::annotate("text", x = 20, y =  Inf, vjust =  2,
+                    label = mh$meta$group_labels[1], size = 7) +
+  ggplot2::annotate("text", x = 20, y = -Inf, vjust = -1,
+                    label = mh$meta$group_labels[2], size = 7) +
+  ggplot2::labs(x = "Propensity Score (%)", y = "Number of Patients") +
+  theme_hv_poster()
+```
+
+The constructor stores group counts and standardized mean differences (SMD)
+before and after matching in `$tables$diagnostics`:
+
+```{r}
+#| label: mirror_histogram_diagnostics
+mh$tables$diagnostics$smd_before
+mh$tables$diagnostics$smd_matched
+mh$tables$diagnostics$group_counts_before
+mh$tables$diagnostics$group_counts_matched
+```
+
+### Weighted IPTW mode (Limited vs. Extended)
+
+When the analysis uses inverse probability of treatment weighting rather than
+1:1 matching, pass `weight_col` instead of `match_col`. Each bin's overlay
+height is the sum of IPTW weights in that bin. `add_weights = TRUE` in the
+sample generator attaches an `mt_wt` column.
+
+```{r}
+#| label: mirror_histogram_weighted_build
+wt_dta <- sample_mirror_histogram_data(
+  n = 2000, separation = 1.5, add_weights = TRUE
+)
+
+mh_wt <- hv_mirror_hist(
+  data             = wt_dta,
+  score_col        = "prob_t",
+  group_col        = "tavr",
+  group_levels     = c(0, 1),
+  group_labels     = c("Limited", "Extended"),
+  weight_col       = "mt_wt",
+  score_multiplier = 100,
+  binwidth         = 5
+)
+```
+
+The bare weighted panel looks like the binary-match bare plot, but the overlay
+encodes IPTW weight sums, not counts.
+
+```{r}
+#| label: mirror_histogram_weighted_bare
+p_wt <- plot(mh_wt, alpha = 0.8)
+p_wt
+```
+
+The IPTW variant uses blue/red for the Limited/Extended groups, with the group
+labels coloured to match.
+
+```{r}
+#| label: mirror_histogram_weighted_decorated
+p_wt +
+  ggplot2::scale_fill_manual(
+    values = c(
+      before_g0   = "white", weighted_g0 = "blue",
+      before_g1   = "white", weighted_g1 = "red"
+    ),
+    guide = "none"
+  ) +
+  ggplot2::scale_x_continuous(
+    limits = c(0, 100),
+    breaks = seq(0, 100, 10)
+  ) +
+  ggplot2::scale_y_continuous(labels = abs) +
+  ggplot2::annotate("text", x = 30, y =  Inf, vjust =  2,
+                    label = mh_wt$meta$group_labels[1], color = "blue", size = 5) +
+  ggplot2::annotate("text", x = 30, y = -Inf, vjust = -1,
+                    label = mh_wt$meta$group_labels[2], color = "red",  size = 5) +
+  ggplot2::labs(x = "Propensity Score (%)", y = "#") +
+  theme_hv_poster()
+```
+
+Weighted diagnostics include the effective N and weighted SMD:
+
+```{r}
+#| label: mirror_histogram_weighted_diagnostics
+mh_wt$tables$diagnostics$smd_weighted
+mh_wt$tables$diagnostics$effective_n_by_group
+```
+
+## Stacked histogram
+
+The stacked histogram shows how the composition of a numeric variable shifts
+over time or across a grouping dimension. `hv_stacked()` prepares the data;
+`plot()` hands back a bare ggplot. `sample_stacked_histogram_data()` generates
+a reproducible dataset with `year` and `category` columns.
+
+```{r}
+#| label: stacked_histogram_data
+hist_dta <- sample_stacked_histogram_data(n_years = 20, start_year = 2000,
+                                           n_categories = 3)
+head(hist_dta)
+```
+
+### Count histogram
+
+The default `position = "stack"` shows raw counts within each bin. Build the
+object with `hv_stacked()`, then dress it with colour scales and a theme.
+
+```{r}
+#| label: stacked_histogram_count
+sh <- hv_stacked(hist_dta, x_col = "year", group_col = "category")
+p_count <- plot(sh)
+
+p_count +
+  scale_fill_brewer(palette = "Set1", name = "Category") +
+  scale_color_brewer(palette = "Set1", name = "Category") +
+  labs(x = "Year", y = "Count") +
+  theme_hv_manuscript()
+```
+
+### Proportion (fill) histogram
+
+`position = "fill"` rescales each bin so the bars sum to 1, making relative
+composition comparable across years without count differences obscuring the
+trend.
+
+```{r}
+#| label: stacked_histogram_fill
+sh2 <- hv_stacked(hist_dta, x_col = "year", group_col = "category",
+                  position = "fill")
+p_fill <- plot(sh2)
+
+p_fill +
+  scale_fill_manual(
+    values = c("1" = "pink", "2" = "cyan", "3" = "orangered"),
+    labels = c("1" = "Group A", "2" = "Group B", "3" = "Group C"),
+    name   = "Category"
+  ) +
+  scale_color_manual(
+    values = c("1" = "pink", "2" = "cyan", "3" = "orangered"),
+    guide  = "none"
+  ) +
+  labs(x = "Year", y = "Proportion") +
+  theme_hv_manuscript()
 ```
