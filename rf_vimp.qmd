@@ -1,1 +1,70 @@
 # Variable importance
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(randomForestSRC)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+Once a forest has converged (see the previous chapter), the next question is
+*which variables drive the prediction?* The standard random forest answer is
+**permutation variable importance** (VIMP). For each predictor, its values are
+randomly permuted in the out-of-bag (OOB) sample, breaking the relationship
+between that predictor and the outcome, and the forest is re-evaluated. The
+increase in prediction error is the variable's importance: a large increase
+means the forest relied heavily on that variable; a near-zero or negative VIMP
+means the variable contributed little.
+
+## Fit the forest
+
+We use the primary biliary cirrhosis (`pbc`) survival data. VIMP is computed at
+fit time, so we pass `importance = TRUE` -- this avoids a second pass (and an
+auto-calculation warning) later.
+
+```{r}
+#| label: rf-fit
+data(pbc, package = "randomForestSRC")
+rf <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100,
+            importance = TRUE)
+rf
+```
+
+## Rank every predictor
+
+`gg_vimp()` extracts the VIMP for every variable and orders them. The `plot()`
+method draws a horizontal bar for each predictor, sorted from most to least
+important, so the ranking reads top to bottom.
+
+```{r}
+#| label: gg-vimp
+plot(gg_vimp(rf)) + theme_hv_manuscript()
+```
+
+Bars are coloured by the sign of the importance. A handful of clinical markers
+-- bilirubin, albumin, prothrombin time -- separate clearly from the pack,
+which is exactly what we would expect for liver disease.
+
+## Show only the top predictors
+
+For a manuscript figure you rarely want every variable. The `nvar` argument
+keeps just the top-N, giving a clean, focused panel.
+
+```{r}
+#| label: gg-vimp-top
+plot(gg_vimp(rf, nvar = 10)) + theme_hv_manuscript()
+```
+
+## Reading VIMP
+
+- **Ranking, not effect size.** VIMP tells you *whether* a variable matters to
+  the forest, not the *direction* or *shape* of its effect. For that, see the
+  variable- and partial-dependence plots in the next chapter.
+- **Sign matters.** A negative VIMP means permuting the variable *improved*
+  OOB error -- a strong signal the variable is noise.
+- **Stability.** VIMP inherits the forest's variability. Confirm the forest has
+  converged (`gg_error()`) before trusting the ranking, and be cautious reading
+  fine distinctions between adjacent low-importance variables.
