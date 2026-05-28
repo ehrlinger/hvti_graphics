@@ -10,19 +10,33 @@ library(ggplot2)
 library(hvtiPlotR)
 ```
 
-A random forest is an *ensemble*: predictions are averaged over many trees.
-The first practical question is always "how many trees are enough?" The
-out-of-bag (OOB) error answers it directly. Each observation is predicted only
-by the trees that did **not** see it during training, so the OOB error is an
-honest, cross-validation-like estimate computed for free while the forest
-grows.
+## When to use it
 
-## Fit the forest
+A random forest is an *ensemble*: its prediction is an average over many trees.
+That raises the first practical question of every fit, before you read a single
+importance ranking or survival curve. How many trees are enough? Too few and the
+average is still jittering from tree to tree; the rankings and curves you draw
+from it will shift if you refit. Enough, and the forest has settled into a stable
+prediction you can build on.
 
-We use the `veteran` survival data again and grow 100 trees. The `block.size = 1`
-argument tells `rfsrc()` [@R-randomForestSRC] to record the OOB error after every tree rather than
-only at the final tree (the default). Without it, `gg_error()` [@R-ggRandomForests] has a single
-error value and the convergence curve collapses to one point.
+Reach for `gg_error()` whenever you have just fit a forest and want to confirm it
+converged. It reads the OOB (out-of-bag) error the forest recorded as it grew and
+plots that error against the number of trees. Each observation is predicted only
+by the trees that did *not* see it during training, so the OOB error is an
+honest, cross-validation-like estimate computed for free while the forest grows.
+The curve it produces is the single cheapest diagnostic in the random-forest
+workflow, and it is the one to look at first.
+
+## The data it needs
+
+`gg_error()` does not work on a data frame. It works on a fitted `rfsrc` object,
+and it needs that object to have recorded its error history. By default `rfsrc()`
+records the OOB error only at the final tree, which leaves a single number and
+nothing to plot. The fix is one argument at fit time: `block.size = 1` tells the
+forest to record the OOB error after every tree.
+
+We use the `veteran` survival data again, one row per patient with a follow-up
+`time` and an event `status`, and grow 100 trees.
 
 ```{r}
 #| label: rf-fit
@@ -31,28 +45,76 @@ rf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100, block.size = 1)
 rf
 ```
 
-## Plot the error curve
+The printed summary confirms the family (survival), the number of trees, and the
+error rate at the final tree. `gg_error()` [@R-ggRandomForests] turns that final
+number into the whole history.
 
-`gg_error()` pulls the cumulative OOB error -- for survival forests this is
-`1 - C-index`, where lower is better -- after each additional tree. The result
-plots as error against the number of trees.
+## Build it
+
+With the forest fit and `block.size = 1` in place, the plot is one line.
+`gg_error()` pulls the cumulative OOB error after each additional tree. For a
+survival forest the error is `1 - C-index` (the concordance index, the
+probability the model ranks a random pair of patients in the right order), so
+lower is better.
 
 ```{r}
 #| label: gg-error
 plot(gg_error(rf)) + theme_hv_manuscript()
 ```
 
-## Reading the curve
+The result plots error on the y-axis against the number of trees on the x-axis.
+`rfsrc()` [@R-randomForestSRC] did the work; `gg_error()` just reads it back.
 
-- The curve drops quickly while the first few dozen trees are added: each new
-  tree still carries information the ensemble did not already have.
-- It then **flattens into a tail**. A flat tail means additional trees no
-  longer change the prediction -- the forest has converged and you have grown
-  enough trees.
-- If the tail were still trending downward at the right edge, that is your
-  signal to refit with a larger `ntree`.
+## Read it
+
+A convergence curve tells its story by its shape, not its level. Three things to
+look at:
+
+- **The drop on the left.** While the first few dozen trees are added, each new
+  tree still carries information the ensemble did not already have, so the error
+  falls quickly.
+- **The flat tail on the right.** A tail that has gone flat means additional
+  trees no longer change the prediction. The forest has converged, and you have
+  grown enough trees.
+- **A tail still sloping down.** If the curve is still trending downward at the
+  right edge, the forest is not done improving. That is your signal to refit with
+  a larger `ntree`.
 
 Here the curve is essentially flat well before 100 trees, so for this small
-dataset 100 trees is adequate. Always glance at `gg_error()` before trusting
-any downstream importance or dependence plot: those are only as stable as the
-underlying forest.
+dataset 100 trees is adequate. Make this glance a habit: check `gg_error()`
+before you trust any downstream importance or dependence plot, because those are
+only as stable as the forest underneath them.
+
+## Variations
+
+### A forest that has not converged
+
+To see what an undersized forest looks like, refit with far too few trees. The
+curve never reaches a flat tail; it is still descending at the right edge, which
+is precisely the pattern that should send you back to a larger `ntree`.
+
+```{r}
+#| label: gg-error-short
+rf_short <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 25,
+                  block.size = 1)
+plot(gg_error(rf_short)) + theme_hv_manuscript()
+```
+
+Compare this to the 100-tree curve above. The shape, not the number on the axis,
+is what tells you whether to grow more trees.
+
+## Pitfalls
+
+- **Forgetting `block.size = 1`.** This is the one that bites everyone. Without
+  it, `rfsrc()` records OOB error only at the final tree, so `gg_error()` has a
+  single value and the convergence curve collapses to one point. Set it at fit
+  time whenever you intend to inspect convergence.
+- **Reading the level instead of the shape.** The y-axis value depends on the
+  outcome and the cohort; a `1 - C-index` of 0.4 is not "bad" in any absolute
+  sense. What you are reading is whether the curve has flattened, not where it
+  sits.
+- **Mistaking OOB error for an external test.** The OOB estimate is honest and
+  free, and it is the right tool for judging convergence. It is not a substitute
+  for an external validation set when the cohort is small: with few patients the
+  OOB error itself is noisy, and a flat curve confirms the forest settled, not
+  that it will generalize to a new institution.
