@@ -20,9 +20,9 @@ deliverable exists.
 | Package | Role | Plot surface |
 |---|---|---|
 | `hvtiPlotR` (2.3.1) | clinical/descriptive ggplot helpers | `hv_*` constructor → `plot()` families |
-| `ggRandomForests` (2.7.3) | ggplot2 visualization of random forests | `gg_*` + `autoplot`/`plot` methods |
-| `randomForestSRC` (3.3.5) | RF fitting engine + example datasets | `rfsrc()`; datasets veteran, pbc, breast, wine, housing |
-| `varPro` | variable priority / selection | visualized via ggRandomForests `gg_varpro`, `gg_beta_varpro`, `gg_ivarpro`, `gg_isopro`, `gg_partial_varpro` |
+| `ggRandomForests` (2.7.3.9014) | ggplot2 visualization of random forests | `gg_*` + `autoplot`/`plot` methods |
+| `randomForestSRC` (3.6.2) | RF fitting engine + example datasets | `rfsrc()`; datasets veteran, pbc, breast, wine, housing |
+| `varPro` (3.1.0) | variable priority / selection | visualized via ggRandomForests `gg_varpro`, `gg_beta_varpro`, `gg_ivarpro`, `gg_isopro`, `gg_partial_varpro` |
 | `TemporalHazard` (1.0.3) | complete R survival/hazard modeling package | `hazard()`/`predict()` → ggplot; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof` |
 | `hvtiRutilities` (1.0.0.9004) | data governance / reproducibility utilities | `data_dictionary`, `label_map`, manifest (`verify_manifest`/`update_manifest`), `compare_datasets`, `r_data_types` |
 
