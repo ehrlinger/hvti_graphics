@@ -1,6 +1,12 @@
 # Data governance and reproducibility
 
-Reproducible analysis starts before the first plot. A documented dataset, typed and labelled variables, and a manifest pinning the exact extract are the difference between a figure you can defend and one you cannot. The `hvtiRutilities` [@R-hvtiRutilities] package supplies the primitives: synthetic data for examples, a data dictionary, label and type maps, dataset manifests, and version diffs.
+Every other chapter in this book ends in a figure. This one comes first in
+practice, because reproducible analysis starts before the first plot. A
+documented dataset, typed and labelled variables, and a manifest pinning the
+exact extract are the difference between a figure you can defend in review and
+one you cannot. The `hvtiRutilities` [@R-hvtiRutilities] package supplies the
+primitives for that work: synthetic data for examples, a data dictionary, label
+and type maps, dataset manifests, and version diffs.
 
 ```{r}
 #| label: setup
@@ -10,9 +16,28 @@ library(hvtiRutilities)
 library(gt)
 ```
 
-## A reproducible sample dataset
+## When to use it
 
-`generate_survival_data()` produces a deterministic synthetic survival cohort. Fixing the seed makes every downstream table and figure reproducible without touching protected health information.
+Reach for this workflow at the start of any analysis that will end up in front
+of a reviewer, a co-author, or your future self. The moment to run it is the
+moment a data extract lands: before you fit a model, before you draw a curve,
+while you still remember which warehouse pull this was and what date it covered.
+The payoff comes later, when someone asks "which version of the data is this
+figure built on" and you can answer with a hash instead of a shrug, or when a
+re-delivery arrives and you need to know in seconds whether anything moved.
+
+None of this requires touching protected health information. Everything below
+runs on synthetic data, and the same helpers run unchanged against your real
+extract once the pipeline is wired up. Think of it as the paperwork that makes
+the science reproducible, kept light enough that you will actually do it.
+
+## The data it needs
+
+The workflow needs a clinical data frame, one row per patient, with whatever
+columns the study carries. For the examples we generate a synthetic survival
+cohort so the chapter runs end to end without any real patient data.
+`generate_survival_data()` is deterministic: fix the seed and every table and
+figure downstream is reproducible.
 
 ```{r}
 #| label: sample-data
@@ -20,11 +45,24 @@ dat <- generate_survival_data(n = 200, seed = 42)
 str(dat)
 ```
 
-Each column carries a `label` attribute, which the governance helpers below read and propagate.
+Notice that each column carries a `label` attribute. That label is not
+decoration. The governance helpers below read it and carry it forward into
+dictionaries, tables, and figure axes, so a variable described once stays
+described everywhere.
 
-## Data dictionary
+## Build it
 
-`data_dictionary()` returns a per-column summary as a data frame: variable name, label, class, distinct values, percent missing, and a compact distribution summary. It renders directly through `gt()`.
+The governance workflow is a short sequence of steps. Each one produces an
+artifact you can save next to the analysis: a dictionary, a label map, a typing
+check, a manifest, and a comparison report. We walk them in order.
+
+### Step 1: a data dictionary
+
+A data dictionary is the human-readable index of an extract. `data_dictionary()`
+returns a per-column summary as a data frame, one row per variable, with the
+variable name, its label, its class, the count of distinct values, the percent
+missing, and a compact distribution summary. It renders straight through `gt()`
+into a table you can drop into a supplement.
 
 ```{r}
 #| label: dict
@@ -33,9 +71,13 @@ gt(dd) |>
   tab_header(title = "Data dictionary")
 ```
 
-## Variable labels
+### Step 2: variable labels in one place
 
-`label_map()` returns the current variable-to-label mapping as a two-column (`key`, `label`) data frame. Holding labels in one place means they travel into tables and figures unchanged, so axis titles and column headers stay consistent across the analysis.
+`label_map()` returns the current variable-to-label mapping as a two-column
+(`key`, `label`) data frame. Holding labels in one place is what keeps an axis
+title in a figure and a column header in a table reading the same way. Change a
+label here and it propagates everywhere the map is read, so you never hand-edit
+"Ejection Fraction" in five places and miss the sixth.
 
 ```{r}
 #| label: labels
@@ -43,9 +85,15 @@ lm <- label_map(dat)
 gt(head(lm, 10))
 ```
 
-## Inferring R data types
+### Step 3: infer and check R data types
 
-`r_data_types()` classifies each column by role and returns the dataset with columns coerced to the inferred type — character IDs become factors, 0/1 indicators become logical. Comparing the inferred class against the source class shows what the classifier changed.
+Raw extracts arrive with everything as character or numeric, and the wrong type
+quietly breaks an analysis: an ID read as a number gets averaged, a 0/1 flag
+read as a count gets summed. `r_data_types()` classifies each column by role and
+returns the dataset with columns coerced to the inferred type, so character IDs
+become factors and 0/1 indicators become logical. Read that sentence twice: it
+returns the *coerced data*, not a report about it. To see what changed, compare
+the source class against the inferred class yourself.
 
 ```{r}
 #| label: dtypes
@@ -61,9 +109,15 @@ data.frame(
   tab_header(title = "Columns retyped by r_data_types()")
 ```
 
-## Dataset manifests
+### Step 4: pin the extract with a manifest
 
-A manifest records provenance for every extract: source system, extract date, row count, and a SHA-256 hash of the file. `update_manifest()` appends an entry (hashing the file on disk) and `verify_manifest()` re-hashes the data directory against the manifest to confirm nothing drifted. The chunk below is not evaluated because it writes files; run it interactively.
+A dictionary documents *what* the data is; a manifest documents *which* data it
+is. A manifest records provenance for every extract: the source system, the
+extract date, the row count, and a SHA-256 hash of the file. `update_manifest()`
+appends an entry, hashing the file on disk, and `verify_manifest()` re-hashes the
+data directory against the manifest to confirm nothing has drifted since you
+wrote it down. The chunk below is not evaluated because it writes files to disk;
+run it interactively, then commit the manifest (never the data) to the repo.
 
 ```{r}
 #| label: manifest
@@ -82,7 +136,8 @@ update_manifest(
 verify_manifest(manifest_path = mp, data_dir = ".", stop_on_error = FALSE)
 ```
 
-A representative manifest entry:
+A representative manifest entry looks like this. The hash is the load-bearing
+field: it is what lets `verify_manifest()` catch a file that changed under you.
 
 ```yaml
 datasets:
@@ -93,9 +148,13 @@ datasets:
   source: CORR DWH
 ```
 
-## Comparing dataset versions
+### Step 5: compare versions on re-delivery
 
-When a data warehouse re-delivers an extract, `compare_datasets()` diffs the old and new versions and reports row-count and structural changes through its print method — a fast check that a re-delivery is what you expected.
+Data warehouses re-deliver extracts, and a re-delivery is rarely a no-op: rows
+get added, a column is renamed, a coding changes. `compare_datasets()` diffs the
+old and new versions and reports row-count and structural changes through its
+print method. It is the fast first check that a fresh pull is what you asked for
+before you rerun anything on it.
 
 ```{r}
 #| label: compare
@@ -103,3 +162,41 @@ old <- generate_survival_data(n = 150, seed = 42)
 new <- generate_survival_data(n = 200, seed = 99)
 compare_datasets(old, new)
 ```
+
+## Read it
+
+Two of these artifacts are reports you read, not just files you store.
+
+A **data dictionary** is read column by column, and the two columns that earn the
+most attention are percent-missing and distinct values. High missingness flags a
+variable you cannot lean on without saying so. A distinct-value count that
+surprises you, two levels where you expected continuous, a thousand where you
+expected a category, usually means a typing or coding problem upstream, caught
+here before it reaches a model. The distribution summary is your sanity check on
+range: a negative age or an ejection fraction above 100 shows up immediately.
+
+A **dataset-comparison report** is read for the diff, not the totals. A change in
+row count is expected on re-delivery and is fine if it matches what the warehouse
+told you to expect. The lines that should make you stop are structural ones: a
+column that appeared, disappeared, or changed type. Those silently break joins
+and recodes downstream, so confirm each one is intentional before you build
+anything on the new extract.
+
+## Pitfalls
+
+- **Unpinned extracts.** A figure built on "the data I pulled sometime last
+  month" is not reproducible. Write a manifest the day the extract lands, commit
+  it, and reference its hash from the analysis. The hash is cheap insurance
+  against a silently swapped file.
+- **Silent type coercion.** `r_data_types()` returns the *coerced data frame*,
+  not a summary of what it did. If you treat its output as a report you will miss
+  that it changed your data. Diff source class against inferred class, as in
+  step 3, and keep the typed object as the one you analyse.
+- **Manifests not re-verified after a re-delivery.** Writing a manifest once is
+  not enough. When a new extract arrives, run `verify_manifest()` and
+  `compare_datasets()` again. A manifest that nobody re-checks is documentation,
+  not a guard rail.
+- **PHI in the repo.** Commit the manifest, the dictionary, and the code; never
+  commit the data file itself. The whole point of the hash is to pin the extract
+  without carrying protected health information into version control. Examples in
+  a book stay on synthetic data for the same reason.
