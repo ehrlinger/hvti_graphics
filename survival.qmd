@@ -12,15 +12,15 @@ library(ggplot2)
 
 The Kaplan-Meier curve is the workhorse of every CORR outcomes paper. Reach for
 it whenever the question is *how long until an event* and some patients have not
-had the event yet by the end of follow-up -- death, reoperation, readmission.
+had the event yet by the end of follow-up: death, reoperation, readmission.
 That last part is what makes survival analysis its own method: a patient who is
 alive at last contact is **right-censored**, not a non-event, and the
 product-limit estimator is what lets those partial observations still count.
 
 `hv_survival()` [@R-hvtiPlotR], built on the survival package [@R-survival],
 estimates the product-limit survival function once and stores everything five
-related panels need -- the survival curve, cumulative hazard, hazard rate,
-log-log check, and integrated survivorship -- plus tidy summary tables in
+related panels need (the survival curve, cumulative hazard, hazard rate,
+log-log check, and integrated survivorship), plus tidy summary tables in
 `$tables`. If you have used the SAS `%kaplan` macro, these are the same five
 plots it draws. You build the S3 object once and call `plot()` with a `type`
 argument to pull out the panel you want; each one comes back as a bare ggplot
@@ -84,7 +84,7 @@ never rises. A few things to look at:
 
 - **The ribbon widens to the right.** As the at-risk population thins, each
   remaining event moves the estimate more, so the confidence band fans out. Be
-  cautious reading the far-right tail -- it may rest on a handful of patients.
+  cautious reading the far-right tail, which may rest on a handful of patients.
 - **Median survival** is where the curve crosses 50%. If it never crosses, the
   median is not reached within follow-up and you report a different landmark
   (e.g. 5-year survival) instead.
@@ -140,7 +140,7 @@ plot(km_s, alpha = 0.8) +
 ### Cumulative hazard
 
 `type = "cumhaz"` gives the Nelson-Aalen cumulative hazard
-`H(t) = -log S(t)` -- a monotonically non-decreasing curve whose slope at any
+`H(t) = -log S(t)`, a monotonically non-decreasing curve whose slope at any
 point is the instantaneous hazard rate. Same object, different `type`.
 
 ```{r}
@@ -156,8 +156,8 @@ plot(km, type = "cumhaz") +
 ### Hazard rate
 
 `type = "hazard"` is the instantaneous hazard. The raw point estimates are
-noisy, so for a figure overlay a LOESS smooth -- the smoothed curve is what
-shows the early-risk peak and later plateau a reviewer is looking for.
+noisy, so for a figure overlay a LOESS smooth. The smoothed curve shows the
+early-risk peak and later plateau a reviewer is looking for.
 
 ```{r}
 #| label: km_hazard
@@ -174,8 +174,8 @@ plot(km, type = "hazard") +
 ### Log-log survival (proportional-hazards check)
 
 `type = "loglog"` plots `log(-log S(t))` against `log(time)`. Parallel lines
-across strata mean the proportional-hazards assumption is reasonable -- the
-check to run before you quote a single hazard ratio. Fit with `group_col` so
+across strata mean the proportional-hazards assumption is reasonable. Run this
+check before you quote a single hazard ratio. Fit with `group_col` so
 there are strata to compare.
 
 ```{r}
@@ -192,7 +192,7 @@ plot(km_s, type = "loglog") +
 
 ### Integrated life table (restricted mean survival)
 
-`type = "life"` is the integrated survivorship -- the area under the survival
+`type = "life"` is the integrated survivorship: the area under the survival
 curve up to time `t`, equal to the restricted mean survival time (RMST) at that
 horizon. It rises linearly while `S(t)` is near 1 and bends as events
 accumulate. RMST is the summary to reach for when the log-log check above shows
