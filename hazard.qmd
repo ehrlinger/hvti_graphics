@@ -8,18 +8,34 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-This chapter covers three families of pre-computed curve plots from hvtiPlotR
-[@R-hvtiPlotR]: the parametric `hazard_plot()`, the nonparametric temporal-trend
-curve (`hv_nonparametric()`), and the ordinal-outcome curve (`hv_ordinal()`).
+## When to use it
 
-## Hazard plot
+The survival chapter built its curves from raw patient times. This chapter is
+for the figures where the modelling is already done and you hold a table of
+fitted values: a parametric model has produced a smooth survival, hazard, or
+cumulative-hazard estimate at a grid of time points, complete with confidence
+bounds. Three related plotting functions from hvtiPlotR [@R-hvtiPlotR] turn
+those tables into figures.
 
-`hazard_plot()` plots pre-computed parametric curves — survival, hazard, or
-cumulative hazard — with an optional Kaplan-Meier empirical overlay. You pass
-the estimate column and its CI bounds explicitly. Two helpers generate the
-demonstration data: `sample_hazard_data()` for the parametric prediction grid
-(`survival`, `hazard`, `cumhaz` plus CI bounds) and `sample_hazard_empirical()`
-for the binned KM overlay.
+Reach for `hazard_plot()` when you have a parametric prediction grid and want
+to show the smooth curve, often with the empirical Kaplan-Meier points overlaid
+so a reviewer can judge how well the model fits. Reach for the nonparametric
+temporal-trend curve (`hv_nonparametric()`) when your outcome is a prevalence or
+a continuous measurement tracked over follow-up with a bootstrap confidence band
+rather than a survival function. Reach for the ordinal curve (`hv_ordinal()`)
+when the outcome has graded levels (regurgitation grade, severity class) and you
+want one probability curve per grade. All three take pre-computed data and hand
+back a bare ggplot you decorate the usual way.
+
+## The data it needs
+
+`hazard_plot()` takes a parametric prediction grid: one row per time point, with
+an estimate column (`survival`, `hazard`, or `cumhaz`) and explicit lower/upper
+CI columns that you name in the call. Two helpers generate the demonstration
+data. `sample_hazard_data()` builds the prediction grid; `sample_hazard_empirical()`
+builds the binned Kaplan-Meier overlay (the discrete empirical estimate the
+smooth curve is meant to track). Using the same cohort size for both keeps the
+overlay aligned with the curve.
 
 ```{r}
 #| label: hazard_data
@@ -28,10 +44,13 @@ emp_hp <- sample_hazard_empirical(n = 500, time_max = 10, n_bins = 6)
 head(dat_hp)
 ```
 
-### Survival curve with KM overlay
+## Build it
 
-The most common variant: a smooth parametric survival curve with confidence
-band plus discrete KM empirical points and error bars.
+The most common figure is a smooth parametric survival curve with its
+confidence band plus discrete Kaplan-Meier points and error bars. You name the
+estimate column and its two CI columns, then pass the empirical data frame and
+its CI columns to draw the overlay. Start from the decorated version since the
+constructor has no separate bare mode here; the call below is the whole figure.
 
 ```{r}
 #| label: hazard_survival
@@ -53,10 +72,31 @@ hazard_plot(
   theme_hv_poster()
 ```
 
+## Read it
+
+The point of the overlay is the comparison between the smooth curve and the
+discrete points. Look for:
+
+- **Points sitting on the curve.** If the empirical Kaplan-Meier estimates fall
+  on or very near the parametric line, the model is describing the data well. If
+  the points wander systematically off the curve (above it early, below it
+  late), the parametric form is the wrong shape and you should reconsider it.
+- **The error bars against the band.** The empirical error bars and the smooth
+  confidence ribbon should tell a consistent story. Where the cohort thins, both
+  widen; a point with a huge error bar is a region the figure cannot really
+  support.
+- **The curve shape itself.** A survival curve falls and flattens; a hazard
+  curve often peaks early then settles; a cumulative hazard only rises. A shape
+  that contradicts the biology is a signal to check the model before the figure.
+
+## Variations
+
 ### Hazard rate
 
 Switch `estimate_col` to `"hazard"` and the matching CI columns for the
-instantaneous hazard rate (%/year).
+instantaneous hazard rate, expressed as percent per year. This is the curve to
+show when the question is *when* the risk is highest rather than *how many*
+survive.
 
 ```{r}
 #| label: hazard_rate
@@ -77,8 +117,10 @@ hazard_plot(
 
 ### Cumulative hazard
 
-The `"cumhaz"` column equals `-log(S) * 100`; used for readmission and
-repeated-event analyses.
+The `"cumhaz"` column equals `-log(S) * 100`. It rises monotonically and its
+slope at any point is the instantaneous hazard. We reach for it in readmission
+and repeated-event analyses, where counting accumulated risk is more natural
+than reporting a survival fraction.
 
 ```{r}
 #| label: hazard_cumhaz
@@ -95,14 +137,112 @@ hazard_plot(
   theme_hv_poster()
 ```
 
-## Nonparametric temporal trend curve
+### Stratified by group
 
-`hv_nonparametric()` prepares pre-computed average curves with bootstrap CI
-ribbons from a two-phase nonparametric temporal-trend model.
-`sample_nonparametric_curve_data()` generates the average curve and CI;
-`sample_nonparametric_curve_points()` generates the binned summary points that
-overlay it. Build the S3 object once with the matching `lower_col`/`upper_col`
-and optional `data_points`, then `plot()`.
+Pass `group_col` to compare two or more groups in one panel, each with its own
+curve, band, and empirical overlay. Look for curves whose bands stop overlapping
+in the windows where the treatment difference matters.
+
+```{r}
+#| label: hazard_stratified
+dat_strat <- sample_hazard_data(
+  n = 400, time_max = 10,
+  groups = c("No Takedown" = 1.0, "Takedown" = 0.65)
+)
+emp_strat <- sample_hazard_empirical(
+  n = 400, time_max = 10, n_bins = 6,
+  groups = c("No Takedown" = 1.0, "Takedown" = 0.65)
+)
+
+hazard_plot(
+  dat_strat,
+  estimate_col  = "survival",
+  lower_col     = "surv_lower",
+  upper_col     = "surv_upper",
+  group_col     = "group",
+  empirical     = emp_strat,
+  emp_lower_col = "lower",
+  emp_upper_col = "upper"
+) +
+  scale_colour_manual(
+    values = c("No Takedown" = "steelblue", "Takedown" = "firebrick"),
+    name   = NULL
+  ) +
+  scale_fill_manual(
+    values = c("No Takedown" = "steelblue", "Takedown" = "firebrick"),
+    guide  = "none"
+  ) +
+  scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = "Years after Surgery", y = "Survival (%)") +
+  theme_hv_poster()
+```
+
+### Population life-table overlay
+
+For age-stratified survival you often want to set the study curves against what
+the general population would do. Pass a life-table data frame to `reference` and
+set `ref_group_col` to draw the population survival as dashed lines per age
+group. The gap between a study curve and its dashed reference is the excess
+mortality attributable to the condition rather than to ageing.
+
+```{r}
+#| label: hazard_lifetable
+dat_age <- sample_hazard_data(
+  n = 600, time_max = 12,
+  groups = c("<65" = 0.5, "65–80" = 1.0, "≥80" = 1.8)
+)
+emp_age <- sample_hazard_empirical(
+  n = 600, time_max = 12, n_bins = 6,
+  groups = c("<65" = 0.5, "65–80" = 1.0, "≥80" = 1.8)
+)
+lt <- sample_life_table(
+  age_groups = c("<65", "65–80", "≥80"),
+  age_mids   = c(55, 72, 85),
+  time_max   = 12
+)
+
+hazard_plot(
+  dat_age,
+  estimate_col     = "survival",
+  lower_col        = "surv_lower",
+  upper_col        = "surv_upper",
+  group_col        = "group",
+  empirical        = emp_age,
+  emp_lower_col    = "lower",
+  emp_upper_col    = "upper",
+  reference        = lt,
+  ref_estimate_col = "survival",
+  ref_group_col    = "group"
+) +
+  scale_colour_manual(
+    values = c("<65" = "steelblue", "65–80" = "forestgreen",
+               "≥80" = "firebrick"),
+    name   = "Age group"
+  ) +
+  scale_fill_manual(
+    values = c("<65" = "steelblue", "65–80" = "forestgreen",
+               "≥80" = "firebrick"),
+    guide  = "none"
+  ) +
+  scale_x_continuous(limits = c(0, 12), breaks = seq(0, 12, 2)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = "Years", y = "Survival (%)",
+       caption = "Dashed lines: US population life table") +
+  theme_hv_poster()
+```
+
+### Nonparametric temporal-trend curve
+
+When the outcome is a prevalence or a continuous measurement tracked over
+follow-up rather than a survival function, `hv_nonparametric()` prepares the
+average curve with a bootstrap CI ribbon. `sample_nonparametric_curve_data()`
+generates the average curve and CI; `sample_nonparametric_curve_points()`
+generates the binned summary points that overlay it. Build the S3 object once
+with the matching `lower_col`/`upper_col` and optional `data_points`, then
+`plot()`.
 
 ```{r}
 #| label: np_curve_data
@@ -122,7 +262,17 @@ np <- hv_nonparametric(
 )
 ```
 
-### Single average curve with CI ribbon
+The bare panel shows the average curve, its CI ribbon, and the binned summary
+points in default colours. Read it the same way you read the empirical overlay
+above: the curve should pass through the binned points, and the ribbon should
+widen at the extremes where the bootstrap sample thins. A flat curve where you
+expected a trend is a hint that the `outcome_type` or CI columns are
+misspecified.
+
+```{r}
+#| label: np_curve_single_bare
+plot(np)
+```
 
 The shaded ribbon here is the 68% bootstrap CI (one standard error); pass
 `ci_level = 0.95` to `sample_nonparametric_curve_data()` for 95% bands.
@@ -139,8 +289,6 @@ plot(np) +
   labs(x = "Follow-up (years)", y = "Prevalence (%)") +
   theme_hv_poster()
 ```
-
-### Two-group comparison
 
 Pass `group_col` to the constructor to compare two average curves in a single
 panel; each group gets its own CI ribbon.
@@ -182,13 +330,13 @@ plot(np_grp) +
   theme(legend.position = c(0.15, 0.85))
 ```
 
-## Nonparametric ordinal outcome curve
+### Nonparametric ordinal-outcome curve
 
-`hv_ordinal()` prepares grade-specific probability curves from a cumulative
-proportional-odds model (e.g. TR grade or AR severity prevalence over time).
-The curve data is long format — one row per time × grade.
-`sample_nonparametric_ordinal_data()` generates the curves and
-`sample_nonparametric_ordinal_points()` the binned summary points.
+When the outcome has graded levels, `hv_ordinal()` prepares one probability
+curve per grade from a cumulative proportional-odds model (the prevalence of
+each regurgitation grade over time, say). The curve data is long format, one row
+per time by grade. `sample_nonparametric_ordinal_data()` generates the curves
+and `sample_nonparametric_ordinal_points()` the binned summary points.
 
 ```{r}
 #| label: np_ordinal_data
@@ -203,10 +351,12 @@ ord_pts <- sample_nonparametric_ordinal_points(
 head(ord_dat)
 ```
 
-### Grade probability curves with data points
-
-Build the object with both curve data and summary points. Each line is one
-grade level; the lines sum to approximately 1.0 at every time point.
+Build the object with both curve data and summary points. Each line is one grade
+level; because every patient has exactly one grade at each time, the lines sum
+to roughly 1.0 at every time point. Read the figure as a stacked story: the
+`"None"` line starts high and declines as patients drift into worse grades, and
+the severe line creeps up. Colours run from grey for None through graduated
+severity to firebrick for Severe so the eye reads worsening as warming.
 
 ```{r}
 #| label: np_ordinal_basic
@@ -225,3 +375,38 @@ plot(np_ord) +
   theme_hv_poster() +
   theme(legend.position = c(0.75, 0.6))
 ```
+
+To collapse higher grades into a combined level (Moderate + Severe, say), subset
+and re-label before passing the data to the constructor. Here we show a
+two-grade version drawn from the same sample data.
+
+```{r}
+#| label: np_ordinal_collapsed
+ord_two <- subset(ord_dat, grade %in% c("None", "Severe"))
+
+plot(hv_ordinal(curve_data = ord_two)) +
+  scale_colour_manual(
+    values = c("None" = "steelblue", "Severe" = "firebrick"),
+    name   = NULL
+  ) +
+  scale_x_continuous(limits = c(0, 5), breaks = 0:5) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
+                     labels = scales::percent) +
+  labs(x = "Follow-up (years)", y = "Grade prevalence (%)") +
+  theme_hv_poster()
+```
+
+## Pitfalls
+
+- **Mismatched CI columns.** Every estimate column has its own pair of CI
+  columns. Plot `hazard` with the survival bounds and the band will be nonsense.
+  Name the matching `lower_col`/`upper_col` for the column you are plotting.
+- **Forgetting the empirical overlay.** A smooth parametric curve always looks
+  convincing. Without the Kaplan-Meier points a reviewer cannot tell whether the
+  model fits, so include `empirical` whenever you have it.
+- **Ordinal lines that do not sum to one.** If your grade curves drift above 1.0
+  or cross oddly, the wide-format grade columns were probably reshaped to long
+  format incorrectly. Each time point's grades should add to about 1.0.
+- **Over-reading the CI level.** The nonparametric ribbon defaults to a 68% band
+  (one standard error), which is narrower than the 95% band readers expect.
+  State the level in the caption, or switch to `ci_level = 0.95`.
