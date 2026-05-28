@@ -1,1 +1,179 @@
 # Alluvial and Sankey plots
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
+## Alluvial plots
+
+`hv_alluvial()` prepares an alluvial (Sankey-style) diagram using `ggalluvial`
+so you can see how patients flow between states across time points or treatment
+stages. Each row of the input is a unique combination of axis values with an
+associated patient count; `plot()` draws flows proportional to that count.
+
+### Sample data
+
+`sample_alluvial_data()` simulates 300 patients with pre-operative AR grade,
+procedure type, and post-operative AR grade columns. The `axes` vector defines
+the left-to-right display order; each unique combination of axis values becomes
+one band, sized by its `freq` count.
+
+```{r}
+#| label: alluvial_data
+dta_al  <- sample_alluvial_data(n = 300, seed = 42)
+axes    <- c("pre_ar", "procedure", "post_ar")
+head(dta_al)
+```
+
+### Bare plot
+
+The bare panel shows flows between the three axis stages with uniform fill and
+no colour, labels, or theme.
+
+```{r}
+#| label: alluvial_bare
+al <- hv_alluvial(dta_al, axes = axes, y_col = "freq")
+plot(al)
+```
+
+### Fill flows by pre-operative grade
+
+Pass `fill_col` to the constructor to colour each flow band by a categorical
+column. Here pre-operative AR grade colours the bands so you can trace how each
+grade distributes across procedure types and post-operative outcomes.
+
+```{r}
+#| label: alluvial_filled
+al_filled <- hv_alluvial(dta_al, axes = axes, y_col = "freq",
+                         fill_col = "pre_ar")
+
+plot(al_filled) +
+  scale_fill_manual(
+    values = c(None     = "steelblue",
+               Mild     = "goldenrod",
+               Moderate = "darkorange",
+               Severe   = "firebrick"),
+    name = "Pre-op AR"
+  ) +
+  scale_colour_manual(
+    values = c(None     = "steelblue",
+               Mild     = "goldenrod",
+               Moderate = "darkorange",
+               Severe   = "firebrick"),
+    guide = "none"
+  ) +
+  scale_x_continuous(
+    breaks = 1:3,
+    labels = c("Pre-op AR", "Procedure", "Post-op AR"),
+    expand = c(0.05, 0.05)
+  ) +
+  labs(y = "Patients (n)",
+       title = "AV Regurgitation: Pre- to Post-operative") +
+  theme_hv_poster()
+```
+
+### Two-axis before / after comparison
+
+When you only need to compare two time points, drop the middle axis and pass
+just two columns to `axes`. Use `axis_labels` to replace the raw column names,
+and `annotate()` to call out the direction of change on the panel.
+
+```{r}
+#| label: alluvial_two_axis
+al2 <- hv_alluvial(
+  dta_al,
+  axes        = c("pre_ar", "post_ar"),
+  y_col       = "freq",
+  fill_col    = "pre_ar",
+  axis_labels = c("Pre-operative", "Post-operative")
+)
+
+plot(al2) +
+  scale_fill_brewer(palette = "RdYlGn", direction = -1,
+                    name = "AR Grade") +
+  scale_colour_brewer(palette = "RdYlGn", direction = -1,
+                      guide = "none") +
+  annotate("text", x = 1.5, y = 250,
+           label = "Improvement after surgery",
+           size = 3.5, fontface = "italic") +
+  labs(y = "Patients (n)",
+       title = "AV Regurgitation Before and After Surgery") +
+  theme_hv_poster()
+```
+
+## Cluster stability Sankey plots
+
+`hv_sankey()` prepares a Sankey diagram (via `ggsankey`) that lets you watch
+how patient cluster assignments shift as you increase K — a visual test of
+cluster stability. Each column represents one value of K (default K = 2 to 9);
+each band shows the fraction of patients whose assignment changes between
+consecutive K values. Node labels show the cluster letter and count.
+
+### Sample data
+
+`sample_cluster_sankey_data()` returns 300 patients with nine
+cluster-assignment columns (`C2` through `C9`), where each column gives the PAM
+cluster label at that K.
+
+```{r}
+#| label: sankey_data
+dta_san <- sample_cluster_sankey_data(n = 300, seed = 42)
+head(dta_san)
+table(dta_san$C9)
+```
+
+### Default plot (K = 2 to 9)
+
+`hv_sankey()` reads the nine cluster-assignment columns and builds the Sankey
+data automatically. The default Set1 palette assigns one colour per cluster
+letter. Wide bands that stay intact across K indicate a stable partition; heavy
+crossing and fragmentation signal that K has grown past what the data supports.
+
+```{r}
+#| label: sankey_default
+#| fig-width: 8
+#| fig-height: 5
+sk <- hv_sankey(dta_san)
+plot(sk) +
+  labs(title = "Cluster Stability: K = 2 to 9") +
+  theme_hv_poster()
+```
+
+### Custom colour palette
+
+Replace the default Set1 colours with a fully custom named vector. Names must
+match the node labels in the data.
+
+```{r}
+#| label: sankey_custom_cols
+#| fig-width: 8
+#| fig-height: 5
+my_cols <- c(
+  A = "#1f77b4", B = "#ff7f0e", C = "#2ca02c", D = "#d62728",
+  E = "#9467bd", F = "#8c564b", G = "#e377c2", H = "#7f7f7f",
+  I = "#bcbd22"
+)
+sk_custom <- hv_sankey(dta_san, node_colours = my_cols)
+plot(sk_custom) +
+  labs(title = "Cluster Stability: K = 2 to 9") +
+  theme_hv_poster()
+```
+
+### Subset of K values
+
+Pass a shorter `cluster_cols` vector to the constructor to show only a range of
+K — useful for focusing a manuscript panel on, say, K = 2 to 6.
+
+```{r}
+#| label: sankey_subset
+#| fig-width: 6
+#| fig-height: 5
+sk_sub <- hv_sankey(dta_san, cluster_cols = paste0("C", 2:6))
+plot(sk_sub) +
+  labs(title = "Cluster Stability: K = 2 to 6") +
+  theme_hv_poster()
+```
