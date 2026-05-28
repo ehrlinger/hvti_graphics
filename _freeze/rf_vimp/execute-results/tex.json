@@ -1,0 +1,21 @@
+{
+  "hash": "78562b3a0356818d2d9ba9dba170efc1",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Variable importance\n\n\n\nOnce a forest has converged (see the previous chapter), the next question is\n*which variables drive the prediction?* The standard random forest answer is\n**permutation variable importance** (VIMP). For each predictor, its values are\nrandomly permuted in the out-of-bag (OOB) sample, breaking the relationship\nbetween that predictor and the outcome, and the forest is re-evaluated. The\nincrease in prediction error is the variable's importance: a large increase\nmeans the forest relied heavily on that variable; a near-zero or negative VIMP\nmeans the variable contributed little.\n\n## Fit the forest\n\nWe use the primary biliary cirrhosis (`pbc`) survival data. VIMP is computed at\nfit time, so we pass `importance = TRUE` -- this avoids a second pass (and an\nauto-calculation warning) later.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndata(pbc, package = \"randomForestSRC\")\nrf <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100,\n            importance = TRUE)\nrf\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n                         Sample size: 276\n                    Number of deaths: 111\n                     Number of trees: 100\n           Forest terminal node size: 15\n       Average no. of terminal nodes: 13.78\nNo. of variables tried at each split: 5\n              Total no. of variables: 17\n       Resampling used to grow trees: swor\n    Resample size used to grow trees: 174\n                            Analysis: RSF\n                              Family: surv\n                      Splitting rule: logrank *random*\n       Number of random split points: 10\n                          (OOB) CRPS: 539.26558224\n             (OOB) standardized CRPS: 0.12867229\n   (OOB) Requested performance error: 0.23188812\n```\n\n\n:::\n:::\n\n\n## Rank every predictor\n\n`gg_vimp()` extracts the VIMP for every variable and orders them. The `plot()`\nmethod draws a horizontal bar for each predictor, sorted from most to least\nimportant, so the ranking reads top to bottom.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nplot(gg_vimp(rf)) + theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](rf_vimp_files/figure-pdf/gg-vimp-1.pdf){fig-pos='H'}\n:::\n:::\n\n\nBars are coloured by the sign of the importance. A handful of clinical markers\n-- bilirubin, albumin, prothrombin time -- separate clearly from the pack,\nwhich is exactly what we would expect for liver disease.\n\n## Show only the top predictors\n\nFor a manuscript figure you rarely want every variable. The `nvar` argument\nkeeps just the top-N, giving a clean, focused panel.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nplot(gg_vimp(rf, nvar = 10)) + theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](rf_vimp_files/figure-pdf/gg-vimp-top-1.pdf){fig-pos='H'}\n:::\n:::\n\n\n## Reading VIMP\n\n- **Ranking, not effect size.** VIMP tells you *whether* a variable matters to\n  the forest, not the *direction* or *shape* of its effect. For that, see the\n  variable- and partial-dependence plots in the next chapter.\n- **Sign matters.** A negative VIMP means permuting the variable *improved*\n  OOB error -- a strong signal the variable is noise.\n- **Stability.** VIMP inherits the forest's variability. Confirm the forest has\n  converged (`gg_error()`) before trusting the ranking, and be cautious reading\n  fine distinctions between adjacent low-importance variables.\n",
+    "supporting": [
+      "rf_vimp_files/figure-pdf"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {
+      "knitr": [
+        "{\"type\":\"list\",\"attributes\":{},\"value\":[]}"
+      ]
+    },
+    "preserve": null,
+    "postProcess": false
+  }
+}

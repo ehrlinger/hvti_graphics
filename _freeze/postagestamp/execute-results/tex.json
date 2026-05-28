@@ -1,0 +1,21 @@
+{
+  "hash": "499431e388b436a665194597a372e0bd",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Postage Stamp Plots\n\n\n\nA \"postage stamp\" plot is a grid of small multiples: the same plot repeated\nacross the levels of one or more categorical variables, laid out in faceted\npanels. Each small panel reads like a postage stamp on a sheet, and the grid lets\nyou compare many subgroups at a glance while holding the axes and geometry\nconstant. `hvtiPlotR` has no dedicated helper for this layout, so we use base\nggplot2's `facet_wrap()` and apply the house theme `theme_hv_manuscript()` for\nvisual consistency.\n\nWe use `hvtiPlotR::sample_eda_data()`, choosing two numeric columns for the x/y\nrelationship and a categorical column to facet on.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndat <- sample_eda_data()\nnums <- names(dat)[vapply(dat, is.numeric, logical(1))]\ngrp  <- names(dat)[vapply(dat, function(x) is.factor(x) || is.character(x), logical(1))][1]\nxvar <- nums[2]\nyvar <- nums[3]\nc(x = xvar, y = yvar, facet = grp)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n            x             y         facet \n   \"op_years\"        \"male\" \"valve_morph\" \n```\n\n\n:::\n:::\n\n\n## Small multiples with a fitted trend\n\nEach panel shows the relationship between two numeric variables for one level of\nthe faceting variable, with a loess trend to summarise the pattern within each\nsubgroup.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nggplot(dat, aes(x = .data[[xvar]], y = .data[[yvar]])) +\n  geom_point(alpha = 0.4, size = 0.8) +\n  geom_smooth(method = \"loess\", se = FALSE) +\n  facet_wrap(vars(.data[[grp]])) +\n  labs(\n    title = \"Small-multiple panels by group\",\n    x = xvar,\n    y = yvar\n  ) +\n  theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](postagestamp_files/figure-pdf/postage-facet-1.pdf){fig-pos='H'}\n:::\n:::\n\n",
+    "supporting": [
+      "postagestamp_files/figure-pdf"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {
+      "knitr": [
+        "{\"type\":\"list\",\"attributes\":{},\"value\":[]}"
+      ]
+    },
+    "preserve": null,
+    "postProcess": false
+  }
+}

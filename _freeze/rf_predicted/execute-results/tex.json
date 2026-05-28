@@ -1,0 +1,21 @@
+{
+  "hash": "f97760b281821c067036e4dc6ef0625b",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Predicted response and survival\n\n\n\nFor a survival forest, the prediction is not a single number but an entire\n**survival curve** for each observation. `gg_rfsrc()` extracts these predicted\ncurves so they can be plotted directly. This chapter shows two views: the\nper-observation curves, and a population summary stratified by a grouping\nvariable.\n\n## Per-observation predicted survival\n\n`gg_rfsrc(object)` returns one out-of-bag predicted survival curve per subject.\nPlotting them all together shows the spread of predicted risk across the\ncohort.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndata(veteran, package = \"randomForestSRC\")\nrf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100)\nplot(gg_rfsrc(rf)) + theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](rf_predicted_files/figure-pdf/rf-fit-1.pdf){fig-pos='H'}\n:::\n:::\n\n\nEach line is one patient's predicted survival probability over time. The fan of\ncurves is the forest's picture of heterogeneity in the cohort: low-risk\nsubjects stay high, high-risk subjects drop early.\n\n## Predicted survival by group\n\nTo compare groups, pass `by =` to `gg_rfsrc()`. It averages the predicted\ncurves within each level of the grouping variable, giving a model-based\nanalogue of stratified survival. We switch to the `pbc` primary biliary\ncirrhosis trial, which has a randomized `treatment` variable.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndata(pbc, package = \"randomForestSRC\")\nrf2 <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100)\nplot(gg_rfsrc(rf2, by = \"treatment\")) + theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](rf_predicted_files/figure-pdf/rf-by-group-1.pdf){fig-pos='H'}\n:::\n:::\n\n\nThe two treatment arms track closely, consistent with the trial's null\nfinding -- but now the comparison comes from the full multivariable forest, not\na univariate split.\n\n## Aside: empirical survival with `gg_survival()`\n\n`gg_rfsrc()` shows the *model's* predicted survival. When you want the raw\n**empirical** (Kaplan-Meier-style) survival of the data instead, use\n`gg_survival()`. It works directly on the data frame -- no forest required --\ntaking the time `interval`, the `censor` indicator, an optional `by` grouping,\nand the `data`.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngg_dta <- gg_survival(\n  interval = \"days\",\n  censor   = \"status\",\n  by       = \"treatment\",\n  data     = pbc\n)\nplot(gg_dta) + theme_hv_manuscript() +\n  labs(y = \"Survival probability\", x = \"Time (days)\")\n```\n\n::: {.cell-output-display}\n![](rf_predicted_files/figure-pdf/gg-survival-1.pdf){fig-pos='H'}\n:::\n:::\n\n\nThe empirical curves and the forest-predicted curves should tell a consistent\nstory; divergence between them is itself diagnostic of how much the other\ncovariates are doing in the model.\n",
+    "supporting": [
+      "rf_predicted_files/figure-pdf"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {
+      "knitr": [
+        "{\"type\":\"list\",\"attributes\":{},\"value\":[]}"
+      ]
+    },
+    "preserve": null,
+    "postProcess": false
+  }
+}

@@ -1,0 +1,41 @@
+name: Publish book to gh-pages
+
+# Renders the Quarto book to HTML and deploys it to the gh-pages branch.
+#
+# The book depends on local-source R packages (TemporalHazard, hvtiRutilities,
+# ggsankey) that are not on CRAN, so CI cannot execute the R chunks. Instead we
+# rely on Quarto's committed `_freeze/` cache: `quarto render` reuses the frozen
+# computational results and never invokes R. Refresh `_freeze/` by re-rendering
+# locally and committing it.
+#
+# HTML only here — the PDF/LaTeX format is built locally (it needs a TeX stack).
+
+on:
+  push:
+    branches:
+      - main
+      - feat/plot-recipes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render book (HTML, from frozen results)
+        run: quarto render --to html
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _book
+          force_orphan: true

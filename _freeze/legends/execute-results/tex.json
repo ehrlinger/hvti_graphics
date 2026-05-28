@@ -1,0 +1,21 @@
+{
+  "hash": "cda26dffc209f601ef41dda5cdbc70f7",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Using legends\n\n\n\nggplot2 places the legend outside the panel by default. For publication figures\nwe often move it inside, drop it, or shrink it — the axis labels frequently do\nthe identification work already. Legend behaviour is controlled through\n`theme()` (or directly via a theme's `...`), and per-aesthetic via `guide =`.\n\nWe use a grouped trends plot so there is a multi-level legend to position.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndta_trends <- sample_trends_data(n = 600, seed = 42)\np_base     <- plot(hv_trends(dta_trends))\n```\n:::\n\n\n## Inside the panel\n\nPass fractional coordinates `c(x, y)` to `legend.position`. `c(0, 0)` is\nbottom-left; `c(1, 1)` is top-right. A light background box keeps it legible\nover data.\n\n\n::: {.cell}\n\n```{.r .cell-code}\np_base +\n  scale_colour_brewer(palette = \"Set1\", name = NULL) +\n  scale_shape_manual(\n    values = c(\"Group I\" = 15, \"Group II\" = 19,\n               \"Group III\" = 17, \"Group IV\" = 18),\n    name = NULL\n  ) +\n  labs(x = \"Surgery Year\", y = \"Outcome\") +\n  theme_hv_poster() +\n  theme(\n    legend.position   = c(0.15, 0.2),\n    legend.background = element_rect(fill = \"white\", colour = \"grey80\",\n                                     linewidth = 0.3)\n  )\n```\n\n::: {.cell-output-display}\n![](legends_files/figure-pdf/inside-1.pdf){fig-pos='H'}\n:::\n:::\n\n\n## Outside the panel (explicit sides)\n\nSet `legend.position` to `\"right\"`, `\"left\"`, `\"top\"`, or `\"bottom\"`.\n`\"bottom\"` with `legend.direction = \"horizontal\"` is the common choice for\nmulti-group figures where a corner legend would crowd the panel.\n\n\n::: {.cell}\n\n```{.r .cell-code}\np_base +\n  scale_colour_brewer(palette = \"Set1\", name = \"Group\") +\n  scale_shape_manual(\n    values = c(\"Group I\" = 15, \"Group II\" = 19,\n               \"Group III\" = 17, \"Group IV\" = 18),\n    name = \"Group\"\n  ) +\n  labs(x = \"Surgery Year\", y = \"Outcome\") +\n  theme_hv_poster() +\n  theme(\n    legend.position  = \"bottom\",\n    legend.direction = \"horizontal\"\n  )\n```\n\n::: {.cell-output-display}\n![](legends_files/figure-pdf/outside-1.pdf){fig-pos='H'}\n:::\n:::\n\n\n## Suppress all legends\n\n`theme(legend.position = \"none\")` hides every legend in one shot.\nAlternatively, `guide = \"none\"` on each `scale_*()` call drops only that\naesthetic's legend — handy when you want a colour legend but no shape legend.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndta_km <- sample_survival_data(n = 500, seed = 42)\nkm     <- hv_survival(dta_km)\n\nplot(km) +\n  scale_color_manual(values = c(All = \"steelblue\"), guide = \"none\") +\n  scale_fill_manual(values  = c(All = \"steelblue\"), guide = \"none\") +\n  scale_y_continuous(breaks = seq(0, 100, 20),\n                     labels = function(x) paste0(x, \"%\")) +\n  scale_x_continuous(breaks = seq(0, 20, 5)) +\n  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +\n  labs(x = \"Years after Operation\", y = \"Freedom from Death (%)\") +\n  theme_hv_poster()\n```\n\n::: {.cell-output-display}\n![](legends_files/figure-pdf/none-1.pdf){fig-pos='H'}\n:::\n:::\n\n\n## Legend text and key size\n\nThe legend inherits the theme's font size, often larger than needed inside a\ncrowded panel. `legend.text` controls the label font; `legend.key.size` shrinks\nthe colour/shape swatch.\n\n\n::: {.cell}\n\n```{.r .cell-code}\np_base +\n  scale_colour_brewer(palette = \"Set1\", name = \"Group\") +\n  scale_shape_manual(\n    values = c(\"Group I\" = 15, \"Group II\" = 19,\n               \"Group III\" = 17, \"Group IV\" = 18),\n    name = \"Group\"\n  ) +\n  labs(x = \"Surgery Year\", y = \"Outcome\") +\n  theme_hv_poster() +\n  theme(\n    legend.text     = element_text(size = 9),\n    legend.key.size = unit(0.4, \"cm\")\n  )\n```\n\n::: {.cell-output-display}\n![](legends_files/figure-pdf/text-1.pdf){fig-pos='H'}\n:::\n:::\n\n",
+    "supporting": [
+      "legends_files/figure-pdf"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {
+      "knitr": [
+        "{\"type\":\"list\",\"attributes\":{},\"value\":[]}"
+      ]
+    },
+    "preserve": null,
+    "postProcess": false
+  }
+}

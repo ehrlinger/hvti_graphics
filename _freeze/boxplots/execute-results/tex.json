@@ -1,0 +1,21 @@
+{
+  "hash": "640d0866dee2f34b2a19b25ea521c925",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# Box Plots\n\n\n\n`hvtiPlotR` does not provide a dedicated box-plot helper, so this chapter builds\nbox plots directly with ggplot2's `geom_boxplot()` and styles them with the house\ntheme `theme_hv_manuscript()` so they stay visually consistent with the rest of\nthe book.\n\nWe use `hvtiPlotR::sample_eda_data()` and detect a numeric column and a\ncategorical grouping column programmatically.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndat <- sample_eda_data()\nnum <- names(dat)[vapply(dat, is.numeric, logical(1))][1]\ngrp <- names(dat)[vapply(dat, function(x) is.factor(x) || is.character(x), logical(1))][1]\nc(numeric = num, group = grp)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n      numeric         group \n       \"year\" \"valve_morph\" \n```\n\n\n:::\n:::\n\n\n## Grouped box plot\n\n\n::: {.cell}\n\n```{.r .cell-code}\nggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +\n  geom_boxplot() +\n  labs(\n    title = \"Numeric distribution by group\",\n    x = grp,\n    y = num\n  ) +\n  theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](boxplots_files/figure-pdf/box-grouped-1.pdf){fig-pos='H'}\n:::\n:::\n\n\n## Box plot with jittered points\n\nOverlaying the raw observations with `geom_jitter()` shows the underlying sample\nsize and spread that a box plot alone hides.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +\n  geom_boxplot(outlier.shape = NA) +\n  geom_jitter(width = 0.15, alpha = 0.3, size = 0.7) +\n  labs(\n    title = \"Box plot with jittered observations\",\n    x = grp,\n    y = num\n  ) +\n  theme_hv_manuscript()\n```\n\n::: {.cell-output-display}\n![](boxplots_files/figure-pdf/box-jitter-1.pdf){fig-pos='H'}\n:::\n:::\n\n",
+    "supporting": [
+      "boxplots_files/figure-pdf"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {
+      "knitr": [
+        "{\"type\":\"list\",\"attributes\":{},\"value\":[]}"
+      ]
+    },
+    "preserve": null,
+    "postProcess": false
+  }
+}
