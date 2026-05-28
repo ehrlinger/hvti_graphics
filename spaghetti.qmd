@@ -112,10 +112,13 @@ dta_tr <- sample_trends_data(
 head(dta_tr)
 ```
 
-### Single variable: cases/year
+### Single variable: annual mean
 
 Subset to a single group and fit with `group_col = NULL` for a single annual
-series, then set axis limits and breaks to match the study window.
+series. `hv_trends()` plots the annual mean of the continuous `value` column, so
+set the x-axis to the study window and let the y-axis span the observed range of
+the mean (here roughly 20--70). Setting `limits` tighter than the data — e.g.
+`c(0, 10)` — silently drops every point and line, leaving a blank panel.
 
 ```{r}
 #| label: trends_n_year
@@ -124,8 +127,8 @@ tr1 <- hv_trends(one_grp, group_col = NULL)
 
 plot(tr1) +
   scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
-  scale_y_continuous(limits = c(0, 10),      breaks = seq(0, 10, 2)) +
-  labs(x = "Year", y = "Cases/year") +
+  scale_y_continuous(limits = c(0, 80),      breaks = seq(0, 80, 20)) +
+  labs(x = "Year", y = "Annual mean outcome") +
   theme_hv_manuscript()
 ```
 
@@ -147,7 +150,7 @@ plot(tr) +
     name = "Group"
   ) +
   scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
-  labs(x = "Year", y = "Outcome (%)") +
+  labs(x = "Year", y = "Annual mean outcome") +
   theme_hv_manuscript()
 ```
 
@@ -160,6 +163,6 @@ Pass `se = TRUE` to `plot()` to add a `geom_ribbon()` around the mean line; the
 #| label: trends_ribbon
 plot(tr1, se = TRUE, alpha = 0.2) +
   scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
-  labs(x = "Year", y = "Cases/year") +
+  labs(x = "Year", y = "Annual mean outcome") +
   theme_hv_manuscript()
 ```
