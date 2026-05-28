@@ -1,1 +1,88 @@
 # Variable priority with varPro
+
+`varPro` ranks variables by *priority* using rule-based importance: rather than permuting predictors as in classical VIMP, it scores each variable by how much a tree's release rules depend on it. `ggRandomForests` provides a family of `gg_*` extractors that pull these scores out of a fitted `varpro` object and render them as tidy `ggplot2` graphics. This chapter works through the main extractors on a regression fit and a classification fit.
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(varPro)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+## Variable priority
+
+We fit a regression forest with `varpro()`. A small `ntree` keeps the example fast; in practice you would use the default. We model fuel economy (`mpg`) on the remaining `mtcars` predictors.
+
+```{r}
+#| label: varpro-fit
+set.seed(42)
+o <- varpro(mpg ~ ., data = mtcars, ntree = 100)
+plot(gg_varpro(o)) + theme_hv_manuscript()
+```
+
+`gg_varpro()` returns an *honest* 15/85 boxplot for each variable: the box spans the importance values obtained when the variable is released across the rule ensemble, and the dashed reference line at the `cutoff` (default 0.79 of the top score on the local-standardized scale) separates selected from unselected variables. Variables whose boxes sit to the right of the cutoff are retained.
+
+Two useful variants. Setting `faithful = TRUE` shows the per-tree importance draws as jittered points behind the boxplot, exposing the spread that the summary hides:
+
+```{r}
+#| label: varpro-faithful
+plot(gg_varpro(o, faithful = TRUE)) + theme_hv_manuscript()
+```
+
+Setting `nvar` restricts the display to the top-ranked variables, which is handy for wide problems:
+
+```{r}
+#| label: varpro-nvar
+plot(gg_varpro(o, nvar = 5)) + theme_hv_manuscript()
+```
+
+## Beta-refined importance (regression)
+
+`gg_beta_varpro()` is **regression-only**. Within each release region it fits a lasso and reports the refined slope (β) coefficients rather than a VIMP-style importance. This tells you not just *whether* a variable matters but the direction and magnitude of its local linear effect.
+
+```{r}
+#| label: beta-varpro
+plot(gg_beta_varpro(o)) + theme_hv_manuscript()
+```
+
+The per-rule lasso refinement (`beta.varpro`) is the expensive step; under Quarto's `freeze` the result is cached after the first render. Note these are lasso-refined β coefficients, not importance scores, so they can be negative.
+
+## Individual variable priority
+
+`gg_ivarpro()` computes *individual* (observation-level) variable priority, decomposing the forest importance down to each case. On a regression fit with weak per-observation signal the decomposition can collapse to nothing, so we demonstrate it on a classification forest, which also lets us show the `which_class` argument. We fit `Species ~ .` on `iris`:
+
+```{r}
+#| label: ivarpro-fit
+set.seed(42)
+oc <- varpro(Species ~ ., data = iris, ntree = 100)
+plot(gg_ivarpro(oc)) + theme_hv_manuscript()
+```
+
+Each panel summarises how strongly individual observations rely on a given variable. For multiclass problems you can focus on a single outcome level with `which_class`:
+
+```{r}
+#| label: ivarpro-class
+plot(gg_ivarpro(oc, which_class = "setosa")) + theme_hv_manuscript()
+```
+
+The classification fit also supports `conditional = TRUE` in `gg_varpro()`, which facets the priority bars by outcome class so you can read which predictors separate which classes:
+
+```{r}
+#| label: varpro-conditional
+plot(gg_varpro(oc, conditional = TRUE)) + theme_hv_manuscript()
+```
+
+## Anomaly / isolation scores
+
+`gg_isopro()` visualises in-sample anomaly (isolation) scores. These come from an `isopro` object, which is built from a fitted `varpro` forest with `varPro::isopro()` rather than from the `varpro` object directly:
+
+```{r}
+#| label: isopro
+iso <- isopro(object = o, ntree = 100)
+plot(gg_isopro(iso)) + theme_hv_manuscript()
+```
+
+Higher isolation scores flag observations that the forest separates with few splits — candidate outliers. Pass `newdata` to `gg_isopro()` to score held-out observations against the fitted isolation forest.
