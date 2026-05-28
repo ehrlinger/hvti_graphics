@@ -2,8 +2,21 @@
 .Rhistory
 .RData
 .Ruserdata
-_book
 
-
+# Quarto build outputs and caches
+/_book/
+/_freeze/
 /.quarto/
 **/*.quarto_ipynb
+
+# Stray render artifacts from single-file (standalone) renders
+/*_files/
+/site_libs/
+
+# Generated book deliverables (produced by `quarto render`)
+/HVTI-ggplot-graphics-recipes.tex
+/HVTI-ggplot-graphics-recipes.pdf
+
+# Old/auxiliary LaTeX build leftovers
+*.log
+index.tex
