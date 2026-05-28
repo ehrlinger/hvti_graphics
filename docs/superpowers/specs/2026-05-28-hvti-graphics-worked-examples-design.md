@@ -9,7 +9,8 @@ Fill the stub chapters of the Quarto book *HVTI ggplot graphics recipes*
 (`hvti_graphics`) with self-contained, rendered worked examples. The primary
 engine is the `hvtiPlotR` package (v2.3.1); the book is extended to also cover
 the related visualization stack — `ggRandomForests`, `randomForestSRC`,
-`varPro`, and `temporal_hazard`. Every plot listed gets at least one worked
+`varPro`, and `TemporalHazard` — plus a data-governance chapter built on
+`hvtiRutilities`. Every plot listed gets at least one worked
 example; gaps no package covers are filled with base-ggplot recipes styled to
 match. The book renders to **HTML and PDF (LaTeX)** so a generated `.tex`/PDF
 deliverable exists.
@@ -22,15 +23,16 @@ deliverable exists.
 | `ggRandomForests` (2.7.3) | ggplot2 visualization of random forests | `gg_*` + `autoplot`/`plot` methods |
 | `randomForestSRC` (3.3.5) | RF fitting engine + example datasets | `rfsrc()`; datasets veteran, pbc, breast, wine, housing |
 | `varPro` | variable priority / selection | visualized via ggRandomForests `gg_varpro`, `gg_beta_varpro`, `gg_ivarpro`, `gg_isopro`, `gg_partial_varpro` |
-| `temporal_hazard` (1.0.3) | pure-R survival/hazard modeling | `hazard()`/`predict()` → manual ggplot; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof` |
+| `TemporalHazard` (1.0.3) | complete R survival/hazard modeling package | `hazard()`/`predict()` → ggplot; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof` |
+| `hvtiRutilities` (1.0.0.9004) | data governance / reproducibility utilities | `data_dictionary`, `label_map`, manifest (`verify_manifest`/`update_manifest`), `compare_datasets`, `r_data_types` |
 
-`hazard` (the C library) is the validation engine behind `temporal_hazard` and
-is **not** an R package — out of scope for plotting; mentioned only as the
-engine `temporal_hazard` ports.
+`TemporalHazard` is a self-contained R package; the original `hazard` C library
+is not required for this book. A gap analysis against the SAS `hazard` package
+is explicitly **future work**, out of scope here.
 
-`temporal_hazard` is not currently installed; its source lives at
-`~/Documents/GitHub/temporal_hazard`. It must be installed (e.g.
-`devtools::install_local`) for its examples to render. See Risks.
+Not currently installed (install from local source before rendering — see
+Risks): `TemporalHazard` (`~/Documents/GitHub/temporal_hazard`, package name
+`TemporalHazard`) and `hvtiRutilities` (`~/Documents/GitHub/hvtiRutilities`).
 
 ## Source material
 
@@ -78,6 +80,12 @@ Gap chapters (no hvtiPlotR helper) use base ggplot2 geoms styled with
 Hybrid structure: keep the existing outline, add focused new chapters for
 function families that do not fit a generic plot type. New files marked **new**.
 
+### Getting started part
+
+| File | Functions / content |
+|---|---|
+| `data_governance.qmd` **new** | `hvtiRutilities` data governance: `data_dictionary`, `label_map`/`add_labels`, dataset manifests (`verify_manifest`/`update_manifest`), `compare_datasets`, `r_data_types`. Uses `generate_survival_data`/`sample_data` for reproducible input. Registered under the existing Getting started part. |
+
 ### Figures part
 
 | File | Functions / content |
@@ -119,9 +127,14 @@ ggRandomForests. varPro examples fit `varPro::varpro()` then visualize.
 
 | File | Functions / content |
 |---|---|
-| `temporal_hazard.qmd` **new** | `hazard()` fit → `predict()` hazard/cumhaz/survival ggplots; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof`. Placed after `nnt.qmd`. |
+| `temporal_hazard.qmd` **new** | `TemporalHazard`: `hazard()` fit → `predict()` hazard/cumhaz/survival ggplots; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof`. Placed after `nnt.qmd`. |
 
 ### Tables part
+
+Tables use `gt` directly in this pass. A dedicated `hvtiRtables` package (to
+augment `hvtiPlotR`) is planned but does not yet exist; it is a **separate
+sub-project** with its own spec/plan. These chapters note that they will
+migrate to `hvtiRtables` once it lands.
 
 | File | Content |
 |---|---|
@@ -155,43 +168,49 @@ attempts to emit binaries during the book build.
 
 ## Files touched
 
-- New chapter files (13): `hazard.qmd`, `nnt.qmd`, `temporal_hazard.qmd`,
-  `consort.qmd`, `sankey.qmd`, `balance.qmd`, `randomforests.qmd`,
-  `rf_error.qmd`, `rf_predicted.qmd`, `rf_vimp.qmd`, `rf_dependence.qmd`,
-  `rf_roc.qmd`, `varpro.qmd`.
+- New chapter files (14): `data_governance.qmd`, `hazard.qmd`, `nnt.qmd`,
+  `temporal_hazard.qmd`, `consort.qmd`, `sankey.qmd`, `balance.qmd`,
+  `randomforests.qmd`, `rf_error.qmd`, `rf_predicted.qmd`, `rf_vimp.qmd`,
+  `rf_dependence.qmd`, `rf_roc.qmd`, `varpro.qmd`.
 - Edited chapter files: scatter, survival, histograms, density, bar, boxplots,
   upset, spaghetti, postagestamp, specialty, combination, qt_tables,
   figure_tables, annotation, themes, colors, legends, manuscripts, researchday.
 - `_quarto.yml`: register all new chapters and the new RF part; add `pdf`
   format, remove `typst`.
-- Environment: install `temporal_hazard` from local source.
+- Environment: install `TemporalHazard` (`~/Documents/GitHub/temporal_hazard`)
+  and `hvtiRutilities` (`~/Documents/GitHub/hvtiRutilities`) from local source.
 
 ## Success criteria
 
 1. `quarto render` completes without error and produces **both HTML and a
    generated `.tex`/PDF** for the book.
 2. Every plot function family in the chapter plan (hvtiPlotR `hv_*`,
-   ggRandomForests `gg_*`, varPro via `gg_*`, temporal_hazard `hazard()`/`hzr_*`)
-   has at least one rendered worked example.
+   ggRandomForests `gg_*`, varPro via `gg_*`, TemporalHazard `hazard()`/`hzr_*`)
+   has at least one rendered worked example, and the data-governance chapter
+   demonstrates the core `hvtiRutilities` workflow.
 3. Each example is self-contained: data via `sample_*()`, bundled
    randomForestSRC datasets, or base R — no external files, no PHI.
 4. Gap chapters (density, boxplots, postage-stamp) render base-ggplot examples
    styled with a `theme_hv_*` theme.
 5. New chapters and the RF part appear in the book navigation via `_quarto.yml`.
 
-## Out of scope
+## Out of scope (deferred sub-projects)
 
-- New functionality in any of the packages themselves.
-- The `hazard` C library (engine only; not an R package).
+- **`hvtiRtables` package creation** — a separate brainstorm → spec → plan when
+  the user is ready. The book's table chapters use `gt` directly until then.
+- **SAS `hazard` gap analysis** — future work; `TemporalHazard` is treated as
+  the complete R package here.
+- New functionality in any of the existing packages themselves.
 - Reorganizing the existing part structure beyond adding the listed chapters
   and the new RF part.
 - The `gt` table content beyond representative examples (not an exhaustive gt tutorial).
 
 ## Risks
 
-- **`temporal_hazard` not installed.** Must `install_local` from
-  `~/Documents/GitHub/temporal_hazard` before rendering, else its chapter fails.
-  Fallback: set that chapter's chunks `eval: false` and show code only.
+- **`TemporalHazard` and `hvtiRutilities` not installed.** Must `install_local`
+  from `~/Documents/GitHub/temporal_hazard` and `~/Documents/GitHub/hvtiRutilities`
+  before rendering, else those chapters fail. Fallback: set the affected
+  chapter's chunks `eval: false` and show code only.
 - **RF rendering cost.** `rfsrc()` fits are slow; use small `ntree` and small
   datasets, and rely on Quarto's freeze/cache so re-renders are cheap.
 - **PDF/LaTeX figure sizing.** Poster/PPT themes are large; for the PDF format,
