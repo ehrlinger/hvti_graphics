@@ -1,1 +1,203 @@
 # Parametric hazard modeling with TemporalHazard
+
+`TemporalHazard` is the R port of the SAS/C `HAZARD` module developed for cardiac-surgery outcomes research. It fits parametric multi-phase hazard models (the classic Blackstone early/constant/late decomposition) alongside the usual nonparametric estimators — Kaplan-Meier survival and the Nelson-Aalen cumulative hazard. This chapter walks through the nonparametric estimates, a parametric Weibull fit, competing-risks cumulative incidence, and model diagnostics, plotting each result with `hvtiPlotR::theme_hv_manuscript()`.
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(TemporalHazard)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+We use the bundled `cabgkul` dataset throughout the survival/hazard sections: 5,880 patients with a follow-up time `int_dead` (interval to death, in years) and an event indicator `dead` (1 = death, 0 = censored). For the competing-risks section we switch to the bundled `omc` dataset, which records both thromboembolic events and death.
+
+```{r}
+#| label: load-data
+data(cabgkul, package = "TemporalHazard")
+str(cabgkul)
+```
+
+## Nonparametric estimates
+
+`hzr_kaplan()` returns a data frame (class `hzr_kaplan`) with one row per event time and columns `time`, `n_risk`, `n_event`, `n_censor`, `survival`, `std_err`, `cl_lower`, `cl_upper`, `cumhaz`, `hazard`, `density`, and `life`. We plot the product-limit survival estimate with its logit-transformed confidence band.
+
+```{r}
+#| label: km
+km <- hzr_kaplan(cabgkul$int_dead, cabgkul$dead)
+head(km)
+
+ggplot(km, aes(x = time, y = survival)) +
+  geom_ribbon(aes(ymin = cl_lower, ymax = cl_upper), alpha = 0.2, fill = "steelblue") +
+  geom_step(colour = "steelblue", linewidth = 0.7) +
+  labs(x = "Years since operation", y = "Survival probability",
+       title = "Kaplan-Meier survival (cabgkul)") +
+  theme_hv_manuscript()
+```
+
+`hzr_nelson()` returns the Nelson-Aalen cumulative hazard (class `hzr_nelson`) with columns `time`, `n_risk`, `n_event`, `weight_sum`, `cumhaz`, `std_err`, `cl_lower`, `cl_upper`, `hazard`, and `cum_events`. We plot the cumulative hazard with its lognormal confidence limits.
+
+```{r}
+#| label: nelson
+na <- hzr_nelson(cabgkul$int_dead, cabgkul$dead)
+head(na)
+
+ggplot(na, aes(x = time, y = cumhaz)) +
+  geom_ribbon(aes(ymin = cl_lower, ymax = cl_upper), alpha = 0.2, fill = "firebrick") +
+  geom_step(colour = "firebrick", linewidth = 0.7) +
+  labs(x = "Years since operation", y = "Cumulative hazard",
+       title = "Nelson-Aalen cumulative hazard (cabgkul)") +
+  theme_hv_manuscript()
+```
+
+## Parametric hazard fit
+
+`hazard()` fits a parametric model when `fit = TRUE`. Starting values for the parameter vector `theta` are supplied explicitly; for a Weibull the two parameters are the scale `mu` and the shape `nu`. The returned object (class `hazard`) is a list with elements `call`, `spec`, `data`, `fit`, `legacy_args`, and `engine`; the fitted parameters live in `fit$fit$theta`.
+
+```{r}
+#| label: fit
+fit <- hazard(time = cabgkul$int_dead, status = cabgkul$dead,
+              theta = c(0.01, 1.0), dist = "weibull", fit = TRUE)
+summary(fit)
+```
+
+`predict.hazard()` evaluates the fitted model over a time grid. For `type = "survival"` and `type = "cumulative_hazard"` it returns a plain numeric vector aligned to the `time` column of `newdata`. (For an intercept-only model `type = "hazard"` returns the constant relative hazard `exp(eta) = 1`, so we derive the instantaneous hazard by differencing the cumulative hazard.)
+
+```{r}
+#| label: predict
+t_grid <- seq(0.5, max(cabgkul$int_dead), length.out = 120)
+nd <- data.frame(time = t_grid)
+
+pred <- data.frame(
+  time     = t_grid,
+  survival = predict(fit, newdata = nd, type = "survival"),
+  cumhaz   = predict(fit, newdata = nd, type = "cumulative_hazard")
+)
+# Instantaneous hazard = d(cumhaz)/dt
+pred$hazard <- c(NA, diff(pred$cumhaz) / diff(pred$time))
+str(pred)
+```
+
+```{r}
+#| label: predict-survival
+ggplot(pred, aes(x = time, y = survival)) +
+  geom_line(colour = "steelblue", linewidth = 0.8) +
+  labs(x = "Years since operation", y = "Survival probability",
+       title = "Parametric (Weibull) survival") +
+  theme_hv_manuscript()
+```
+
+```{r}
+#| label: predict-cumhaz
+ggplot(pred, aes(x = time, y = cumhaz)) +
+  geom_line(colour = "firebrick", linewidth = 0.8) +
+  labs(x = "Years since operation", y = "Cumulative hazard",
+       title = "Parametric (Weibull) cumulative hazard") +
+  theme_hv_manuscript()
+```
+
+```{r}
+#| label: predict-hazard
+ggplot(subset(pred, !is.na(hazard)), aes(x = time, y = hazard)) +
+  geom_line(colour = "darkgreen", linewidth = 0.8) +
+  labs(x = "Years since operation", y = "Instantaneous hazard rate",
+       title = "Parametric (Weibull) hazard rate") +
+  theme_hv_manuscript()
+```
+
+The fitted shape `nu < 1` produces the monotonically declining hazard typical of post-operative mortality risk that is highest early and then falls.
+
+## Competing risks
+
+`hzr_competing_risks()` estimates cumulative incidence functions for an integer-coded `event` vector (0 = censored, 1, 2, ... = competing event types). It returns a data frame (class `hzr_competing_risks`) with `time`, `n_risk`, per-type `n_event_k`, `n_censor`, overall event-free `surv`, per-type cumulative incidence `incid_k`, and standard errors `se_surv` / `se_k`.
+
+The `omc` dataset records thromboembolic events (`te1`, `te2`, `te3`) and death (`dead`). We code a two-cause competing-risks outcome: type 1 = any thromboembolic event, type 2 = death.
+
+```{r}
+#| label: cr-data
+data(omc, package = "TemporalHazard")
+event <- with(omc, ifelse(te1 == 1 | te2 == 1 | te3 == 1, 1L,
+                          ifelse(dead == 1, 2L, 0L)))
+table(event)
+
+cr <- hzr_competing_risks(omc$int_dead, event)
+head(cr)
+```
+
+We reshape the two incidence columns to long form and plot both cumulative incidence curves.
+
+```{r}
+#| label: cr-plot
+cif <- data.frame(
+  time      = rep(cr$time, 2),
+  incidence = c(cr$incid_1, cr$incid_2),
+  cause     = factor(rep(c("Thromboembolic", "Death"), each = nrow(cr)))
+)
+
+ggplot(cif, aes(x = time, y = incidence, colour = cause)) +
+  geom_step(linewidth = 0.7) +
+  labs(x = "Years since operation", y = "Cumulative incidence",
+       colour = "Cause", title = "Competing-risks cumulative incidence (omc)") +
+  theme_hv_manuscript()
+```
+
+## Diagnostics
+
+`hzr_gof()` compares the fitted parametric model against the Kaplan-Meier estimate. With its default time grid (the observed event times) it returns columns `time`, `n_risk`, `n_event`, `n_censor`, `km_surv`, `km_cumhaz`, `par_surv`, `par_cumhaz`, `cum_observed`, and `cum_expected`, plus a `residual` (expected minus observed). A `"summary"` attribute carries the scalar conservation diagnostics.
+
+```{r}
+#| label: gof
+gof <- hzr_gof(fit)
+attr(gof, "summary")
+head(gof)
+```
+
+Plotting the parametric survival against the Kaplan-Meier survival shows how closely the Weibull tracks the empirical curve.
+
+```{r}
+#| label: gof-plot
+gof_long <- data.frame(
+  time     = rep(gof$time, 2),
+  survival = c(gof$km_surv, gof$par_surv),
+  model    = factor(rep(c("Kaplan-Meier", "Parametric"), each = nrow(gof)))
+)
+
+ggplot(gof_long, aes(x = time, y = survival, colour = model)) +
+  geom_line(linewidth = 0.6) +
+  labs(x = "Years since operation", y = "Survival probability",
+       colour = NULL, title = "Goodness of fit: observed vs. parametric") +
+  theme_hv_manuscript()
+```
+
+The cumulative observed versus expected events curve is the survival-analysis analogue of a calibration plot; close agreement (a conservation ratio near 1) indicates the parametric model reproduces the event count over time.
+
+```{r}
+#| label: gof-oe
+oe <- data.frame(
+  time   = rep(gof$time, 2),
+  events = c(gof$cum_observed, gof$cum_expected),
+  kind   = factor(rep(c("Observed", "Expected"), each = nrow(gof)))
+)
+
+ggplot(oe, aes(x = time, y = events, colour = kind)) +
+  geom_line(linewidth = 0.6) +
+  labs(x = "Years since operation", y = "Cumulative events",
+       colour = NULL, title = "Cumulative observed vs. expected events") +
+  theme_hv_manuscript()
+```
+
+Finally, `hzr_calibrate()` bins a continuous covariate into quantile groups and reports the observed event probability per bin. It returns columns `group`, `n`, `events`, `mean`, `min`, `max`, `prob`, and `link_value` (the event probability on the chosen link scale). Here we calibrate against follow-up time itself as a simple worked example.
+
+```{r}
+#| label: calibrate
+cal <- hzr_calibrate(cabgkul$int_dead, cabgkul$dead, groups = 10)
+cal
+
+ggplot(cal, aes(x = mean, y = prob)) +
+  geom_point(size = 2, colour = "steelblue") +
+  geom_line(colour = "steelblue") +
+  labs(x = "Mean follow-up time in bin (years)", y = "Observed event probability",
+       title = "Calibration across follow-up-time deciles") +
+  theme_hv_manuscript()
+```
