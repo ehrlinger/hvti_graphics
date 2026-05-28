@@ -1,6 +1,6 @@
 # Data governance and reproducibility
 
-Reproducible analysis starts before the first plot. A documented dataset, typed and labelled variables, and a manifest pinning the exact extract are the difference between a figure you can defend and one you cannot. The `hvtiRutilities` package supplies the primitives: synthetic data for examples, a data dictionary, label and type maps, dataset manifests, and version diffs.
+Reproducible analysis starts before the first plot. A documented dataset, typed and labelled variables, and a manifest pinning the exact extract are the difference between a figure you can defend and one you cannot. The `hvtiRutilities` [@R-hvtiRutilities] package supplies the primitives: synthetic data for examples, a data dictionary, label and type maps, dataset manifests, and version diffs.
 
 ```{r}
 #| label: setup

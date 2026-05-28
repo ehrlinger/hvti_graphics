@@ -8,9 +8,9 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-This chapter covers three families of pre-computed curve plots: the
-parametric `hazard_plot()`, the nonparametric temporal-trend curve
-(`hv_nonparametric()`), and the ordinal-outcome curve (`hv_ordinal()`).
+This chapter covers three families of pre-computed curve plots from hvtiPlotR
+[@R-hvtiPlotR]: the parametric `hazard_plot()`, the nonparametric temporal-trend
+curve (`hv_nonparametric()`), and the ordinal-outcome curve (`hv_ordinal()`).
 
 ## Hazard plot
 

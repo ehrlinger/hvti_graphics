@@ -12,10 +12,10 @@ library(hvtiPlotR)
 
 Random forest analysis in this book follows a consistent two-step workflow.
 
-1. **Fit** a forest with `randomForestSRC::rfsrc()`. This is the modeling
+1. **Fit** a forest with `randomForestSRC::rfsrc()` [@R-randomForestSRC]. This is the modeling
    engine: it grows the trees, computes out-of-bag (OOB) predictions, and
    (optionally) variable importance.
-2. **Visualize** the fitted object with a `ggRandomForests` `gg_*()`
+2. **Visualize** the fitted object with a `ggRandomForests` [@R-ggRandomForests] `gg_*()`
    *constructor*. Each constructor extracts a tidy slice of the forest --
    error rates, predicted survival, variable importance, partial dependence --
    and returns a lightweight object with `plot()` and `autoplot()` methods that

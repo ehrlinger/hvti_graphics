@@ -20,8 +20,8 @@ grows.
 ## Fit the forest
 
 We use the `veteran` survival data again and grow 100 trees. The `block.size = 1`
-argument tells `rfsrc()` to record the OOB error after every tree rather than
-only at the final tree (the default). Without it, `gg_error()` has a single
+argument tells `rfsrc()` [@R-randomForestSRC] to record the OOB error after every tree rather than
+only at the final tree (the default). Without it, `gg_error()` [@R-ggRandomForests] has a single
 error value and the convergence curve collapses to one point.
 
 ```{r}

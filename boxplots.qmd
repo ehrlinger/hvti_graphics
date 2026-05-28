@@ -9,7 +9,7 @@ library(ggplot2)
 ```
 
 `hvtiPlotR` does not provide a dedicated box-plot helper, so this chapter builds
-box plots directly with ggplot2's `geom_boxplot()` and styles them with the house
+box plots directly with ggplot2's [@R-ggplot2] `geom_boxplot()` and styles them with the house
 theme `theme_hv_manuscript()` so they stay visually consistent with the rest of
 the book.
 

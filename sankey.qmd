@@ -10,7 +10,8 @@ library(ggplot2)
 
 ## Alluvial plots
 
-`hv_alluvial()` prepares an alluvial (Sankey-style) diagram using `ggalluvial`
+`hv_alluvial()`, from hvtiPlotR [@R-hvtiPlotR], prepares an alluvial
+(Sankey-style) diagram using `ggalluvial` [@R-ggalluvial]
 so you can see how patients flow between states across time points or treatment
 stages. Each row of the input is a unique combination of axis values with an
 associated patient count; `plot()` draws flows proportional to that count.
@@ -107,7 +108,7 @@ plot(al2) +
 
 ## Cluster stability Sankey plots
 
-`hv_sankey()` prepares a Sankey diagram (via `ggsankey`) that lets you watch
+`hv_sankey()` prepares a Sankey diagram (via `ggsankey` [@R-ggsankey]) that lets you watch
 how patient cluster assignments shift as you increase K — a visual test of
 cluster stability. Each column represents one value of K (default K = 2 to 9);
 each band shows the fraction of patients whose assignment changes between

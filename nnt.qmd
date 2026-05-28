@@ -8,9 +8,9 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-Both plots in this chapter take a pre-computed data frame and a single call —
-you name the estimate column and its CI bounds, then decorate the returned
-ggplot.
+Both plots in this chapter, from hvtiPlotR [@R-hvtiPlotR], take a pre-computed
+data frame and a single call — you name the estimate column and its CI bounds,
+then decorate the returned ggplot.
 
 ## Number needed to treat
 

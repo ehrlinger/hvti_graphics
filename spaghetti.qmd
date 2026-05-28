@@ -10,8 +10,8 @@ library(ggplot2)
 
 ## Spaghetti / profile plot
 
-`hv_spaghetti()` draws one trajectory line per subject over time, with optional
-stratification by a grouping variable. `plot()` accepts `add_smooth = TRUE` for
+`hv_spaghetti()`, from hvtiPlotR [@R-hvtiPlotR], draws one trajectory line per
+subject over time, with optional stratification by a grouping variable. `plot()` accepts `add_smooth = TRUE` for
 an optional LOESS overlay and returns a bare ggplot. `sample_spaghetti_data()`
 generates 150 patients with up to 6 observations each, stratified by a named
 proportion vector.

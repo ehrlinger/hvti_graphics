@@ -13,7 +13,7 @@ across the levels of one or more categorical variables, laid out in faceted
 panels. Each small panel reads like a postage stamp on a sheet, and the grid lets
 you compare many subgroups at a glance while holding the axes and geometry
 constant. `hvtiPlotR` has no dedicated helper for this layout, so we use base
-ggplot2's `facet_wrap()` and apply the house theme `theme_hv_manuscript()` for
+ggplot2's [@R-ggplot2] `facet_wrap()` and apply the house theme `theme_hv_manuscript()` for
 visual consistency.
 
 We use `hvtiPlotR::sample_eda_data()`, choosing two numeric columns for the x/y

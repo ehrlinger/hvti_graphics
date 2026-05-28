@@ -35,7 +35,7 @@ rf
 
 ## Rank every predictor
 
-`gg_vimp()` extracts the VIMP for every variable and orders them. The `plot()`
+`gg_vimp()`, from ggRandomForests [@R-ggRandomForests], extracts the VIMP for every variable and orders them. The `plot()`
 method draws a horizontal bar for each predictor, sorted from most to least
 important, so the ranking reads top to bottom.
 

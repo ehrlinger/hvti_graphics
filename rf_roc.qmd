@@ -41,7 +41,7 @@ interesting event is recurrence.
 
 ## ROC curve
 
-`gg_roc()` builds the OOB ROC curve for one outcome. The `which_outcome`
+`gg_roc()`, from ggRandomForests [@R-ggRandomForests], builds the OOB ROC curve for one outcome. The `which_outcome`
 argument is the *index* of the class to treat as positive (here `2` selects the
 second level, `R`), not the level name.
 

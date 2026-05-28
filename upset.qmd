@@ -16,7 +16,7 @@ To show non-distinct groups and understand overlapping groupings, we turn to VEN
 
 ## Upset plots
 
-`hv_upset()` builds an UpSet diagram via `ggupset::scale_x_upset()` to
+`hv_upset()`, from hvtiPlotR [@R-hvtiPlotR], builds an UpSet diagram via `ggupset::scale_x_upset()` to
 visualise surgical procedure co-occurrences or any set-membership data. Where a
 Venn diagram breaks down past three or four sets, UpSet scales cleanly to seven
 or more.

@@ -8,7 +8,7 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-Every hvtiPlotR plot renders as a bare `ggplot` object: no labels, annotations,
+Every hvtiPlotR [@R-hvtiPlotR] plot renders as a bare `ggplot` object: no labels, annotations,
 or cropping are applied by the constructor. You add those by chaining `+`
 layers. This chapter covers axis/title text (`labs()`), in-panel annotations
 (`annotate()`), viewport cropping (`coord_cartesian()`), and draft footnotes

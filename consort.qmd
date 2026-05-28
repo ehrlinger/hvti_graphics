@@ -8,10 +8,11 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-`hv_consort()` builds a CONSORT-style patient-flow diagram via a multi-step
+`hv_consort()`, from hvtiPlotR [@R-hvtiPlotR], builds a CONSORT-style
+patient-flow diagram via a multi-step
 API: `hv_consort_start()` initializes a patient-level tracker,
 `hv_consort_exclude()` adds exclusion stages, and `hv_consort()` renders the
-result. The diagram is drawn by the `consort` package (grid graphics), so it
+result. The diagram is drawn by the `consort` package [@R-consort] (grid graphics), so it
 is **not** a `ggplot` — do not decorate it with `+` or `theme_*()`.
 
 ## Sample data

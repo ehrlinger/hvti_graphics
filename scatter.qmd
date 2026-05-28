@@ -12,7 +12,8 @@ library(ggplot2)
 it returns a scatter plot with a LOESS smoother overlay; observations missing
 `y_col` are drawn as rug ticks on the x-axis. `plot()` on the `hv_eda` object
 returns a bare `ggplot` that you decorate with colour scales, labels, and
-`theme_hv_manuscript()` (or `theme_hv_poster()`).
+`theme_hv_manuscript()` (or `theme_hv_poster()`). All of these come from
+hvtiPlotR [@R-hvtiPlotR].
 
 ## Sample data
 

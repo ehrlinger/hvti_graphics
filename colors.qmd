@@ -8,7 +8,8 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-hvtiPlotR plots carry no colour scale by default. `scale_colour_*` controls
+hvtiPlotR plots carry no colour scale by default. ggplot2's [@R-ggplot2]
+`scale_colour_*` controls
 line and point colours; `scale_fill_*` controls filled areas (ribbons, bars).
 Both take the same `name` (legend title) and `guide` (legend display)
 arguments — set them together so the two scales stay in sync.

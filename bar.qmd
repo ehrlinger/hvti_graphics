@@ -11,8 +11,8 @@ library(patchwork)
 
 ## EDA barplots
 
-`hv_eda()` drives exploratory data analysis of any variable against a reference
-time axis. `eda_classify_var()` detects whether a column is continuous,
+`hv_eda()`, from hvtiPlotR [@R-hvtiPlotR], drives exploratory data analysis of
+any variable against a reference time axis. `eda_classify_var()` detects whether a column is continuous,
 numeric-categorical, or character-categorical; `sample_eda_data()` generates a
 mixed-type dataset. `plot()` returns a bare ggplot to dress with colour scales,
 labels, and a theme.

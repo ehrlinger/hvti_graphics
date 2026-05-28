@@ -1,6 +1,6 @@
 # Publication tables
 
-For a thorough treatment of effective display tables in `gt`, see
+For a thorough treatment of effective display tables in `gt` [@R-gt], see
 Rich Iannone's guide:
 <https://rich-iannone.github.io/gt-effective-display-tables/>.
 

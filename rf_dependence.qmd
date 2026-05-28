@@ -38,7 +38,7 @@ t_eval
 
 ## Variable dependence
 
-`gg_variable()` returns one predicted survival probability per observation. For
+`gg_variable()`, from ggRandomForests [@R-ggRandomForests], returns one predicted survival probability per observation. For
 a survival forest the `plot()` method needs a `time` to evaluate, and an `xvar`
 selection. Setting `panel = TRUE` lays the chosen predictors out side by side;
 each point is one patient and the blue curve is a loess smooth.

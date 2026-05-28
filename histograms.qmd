@@ -12,8 +12,8 @@ library(ggplot2)
 
 In propensity-matched analyses we routinely produce a mirrored histogram to
 show how well matching compressed the overlap between two treatment groups.
-`hv_mirror_hist()` prepares the data; `plot()` hands back a bare ggplot to
-dress with colour and labels. Two display modes are selected by the
+`hv_mirror_hist()`, from hvtiPlotR [@R-hvtiPlotR], prepares the data; `plot()`
+hands back a bare ggplot to dress with colour and labels. Two display modes are selected by the
 constructor arguments: **binary-match mode** (`match_col`) shows all
 observations before matching with the matched subset overlaid, and **weighted
 IPTW mode** (`weight_col`) shows raw counts with per-bin IPTW weight sums

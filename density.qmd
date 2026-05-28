@@ -9,7 +9,7 @@ library(ggplot2)
 ```
 
 `hvtiPlotR` does not provide a dedicated density-plot helper, so this chapter
-builds density plots directly with ggplot2's `geom_density()` and styles them with
+builds density plots directly with ggplot2's [@R-ggplot2] `geom_density()` and styles them with
 the house theme `theme_hv_manuscript()` so they stay visually consistent with the
 rest of the book.
 

@@ -1,6 +1,6 @@
 # Using R for figures
 
-If you have written any `ggplot2`, the hvtiPlotR figures will feel familiar --
+If you have written any `ggplot2` [@R-ggplot2], the hvtiPlotR [@R-hvtiPlotR] figures will feel familiar --
 you are still building a plot in layers with `+`. The difference is where you
 start. Rather than mapping raw columns to a geom yourself, you hand the data to a
 constructor that knows what the figure needs, and it returns a plot you finish.

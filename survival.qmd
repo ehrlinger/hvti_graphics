@@ -13,7 +13,8 @@ stores the data for five companion panels plus tidy summary tables in
 `$tables`. Build the S3 object once, then call `plot()` with the `type`
 argument to render a bare ggplot for the selected panel (default
 `"survival"`). Decorate each panel with scales, labels, and a theme.
-Confidence intervals use the logit transform at 0.95 by default.
+Confidence intervals use the logit transform at 0.95 by default. The estimator
+is built on hvtiPlotR [@R-hvtiPlotR] over the survival package [@R-survival].
 
 ## Sample data
 

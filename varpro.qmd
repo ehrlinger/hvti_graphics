@@ -1,6 +1,6 @@
 # Variable priority with varPro
 
-`varPro` ranks variables by *priority* using rule-based importance: rather than permuting predictors as in classical VIMP, it scores each variable by how much a tree's release rules depend on it. `ggRandomForests` provides a family of `gg_*` extractors that pull these scores out of a fitted `varpro` object and render them as tidy `ggplot2` graphics. This chapter works through the main extractors on a regression fit and a classification fit.
+`varPro` [@R-varPro] ranks variables by *priority* using rule-based importance: rather than permuting predictors as in classical VIMP, it scores each variable by how much a tree's release rules depend on it. `ggRandomForests` [@R-ggRandomForests] provides a family of `gg_*` extractors that pull these scores out of a fitted `varpro` object and render them as tidy `ggplot2` graphics. This chapter works through the main extractors on a regression fit and a classification fit.
 
 ```{r}
 #| label: setup

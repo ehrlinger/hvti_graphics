@@ -14,8 +14,8 @@ The covariate balance plot is the standard quality-control figure for
 propensity-score matching and IPTW analyses. Each covariate occupies a labelled
 row; points show the standardized mean difference (SMD) for each comparison
 group. A solid vertical line marks zero balance; dotted lines at ±10% give a
-quick visual threshold for acceptable balance. `hv_balance()` prepares the
-data; `plot()` hands you a bare ggplot to style with `+`.
+quick visual threshold for acceptable balance. `hv_balance()`, from hvtiPlotR
+[@R-hvtiPlotR], prepares the data; `plot()` hands you a bare ggplot to style with `+`.
 
 Input must be in **long format**: one row per covariate × group combination
 with columns for the covariate name, the group label, and the numeric SMD.

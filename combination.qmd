@@ -9,14 +9,14 @@ library(ggplot2)
 library(patchwork)
 ```
 
-The `patchwork` package composes multiple ggplot objects into a single figure.
+The `patchwork` [@R-patchwork] package composes multiple ggplot objects into a single figure.
 The two patterns we reach for most are side-by-side comparisons and a main plot
 stacked above a companion panel. Each panel is built independently and composed
 at the last step, so you can adjust one without touching the other.
 
 ## Building the panels
 
-We build two small hvtiPlotR plots from the `sample_*()` generators: a survival
+We build two small hvtiPlotR [@R-hvtiPlotR] plots from the `sample_*()` generators: a survival
 curve and a covariate-balance panel.
 
 ```{r}

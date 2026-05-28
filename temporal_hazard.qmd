@@ -1,6 +1,6 @@
 # Parametric hazard modeling with TemporalHazard
 
-`TemporalHazard` is the R port of the SAS/C `HAZARD` module developed for cardiac-surgery outcomes research. It fits parametric multi-phase hazard models (the classic Blackstone early/constant/late decomposition) alongside the usual nonparametric estimators — Kaplan-Meier survival and the Nelson-Aalen cumulative hazard. This chapter walks through the nonparametric estimates, a parametric Weibull fit, competing-risks cumulative incidence, and model diagnostics, plotting each result with `hvtiPlotR::theme_hv_manuscript()`.
+`TemporalHazard` [@R-TemporalHazard] is the R port of the SAS/C `HAZARD` module developed for cardiac-surgery outcomes research. It fits parametric multi-phase hazard models (the classic Blackstone early/constant/late decomposition) alongside the usual nonparametric estimators — Kaplan-Meier survival and the Nelson-Aalen cumulative hazard, built on the survival package [@R-survival]. This chapter walks through the nonparametric estimates, a parametric Weibull fit, competing-risks cumulative incidence, and model diagnostics, plotting each result with `hvtiPlotR::theme_hv_manuscript()`.
 
 ```{r}
 #| label: setup

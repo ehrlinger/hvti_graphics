@@ -11,8 +11,8 @@ library(hvtiPlotR)
 ```
 
 For a survival forest, the prediction is not a single number but an entire
-**survival curve** for each observation. `gg_rfsrc()` extracts these predicted
-curves so they can be plotted directly. This chapter shows two views: the
+**survival curve** for each observation. `gg_rfsrc()`, from ggRandomForests
+[@R-ggRandomForests], extracts these predicted curves so they can be plotted directly. This chapter shows two views: the
 per-observation curves, and a population summary stratified by a grouping
 variable.
 

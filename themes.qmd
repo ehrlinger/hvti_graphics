@@ -8,7 +8,7 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-hvtiPlotR ships output-target themes via `theme_hv_*()`. Each sets a complete
+hvtiPlotR [@R-hvtiPlotR] ships output-target themes via `theme_hv_*()`. Each sets a complete
 non-data formatting baseline; the constructor and `plot()` add none of it. Pick
 the theme that matches where the figure lands.
 
