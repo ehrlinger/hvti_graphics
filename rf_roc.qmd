@@ -1,1 +1,100 @@
 # ROC and Brier performance
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(randomForestSRC)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+For a *classification* forest the prediction is a class probability, and we
+judge it the same way we judge any probabilistic classifier:
+
+- The **ROC curve** traces the trade-off between the true-positive rate
+  (sensitivity) and the false-positive rate (1 - specificity) as the decision
+  threshold sweeps from 0 to 1. The **area under the curve (AUC)** summarises it
+  in a single number: 0.5 is random guessing, 1.0 is perfect separation.
+- The **Brier score** measures calibration -- the mean squared difference
+  between predicted probabilities and observed outcomes. Lower is better.
+
+All of these are computed out-of-bag, so they are honest estimates that need no
+separate test set.
+
+## Fit a classification forest
+
+We use the `breast` cancer data, where `status` records recurrence with two
+levels.
+
+```{r}
+#| label: rf-fit
+data(breast, package = "randomForestSRC")
+levels(breast$status)
+rf <- rfsrc(status ~ ., data = breast, ntree = 100)
+rf$family
+```
+
+The outcome levels are `N` (no recurrence) and `R` (recurrence). The clinically
+interesting event is recurrence.
+
+## ROC curve
+
+`gg_roc()` builds the OOB ROC curve for one outcome. The `which_outcome`
+argument is the *index* of the class to treat as positive (here `2` selects the
+second level, `R`), not the level name.
+
+```{r}
+#| label: gg-roc
+plot(gg_roc(rf, which_outcome = 2)) + theme_hv_manuscript()
+```
+
+The curve bows toward the top-left corner; the further from the diagonal, the
+better the forest discriminates recurrence from non-recurrence. The AUC printed
+on the panel quantifies that gap.
+
+## Multi-class ROC
+
+With more than two classes you draw one curve per class (each class treated as
+positive in turn). The `per_class = TRUE` flag does this in one call; we
+illustrate on `iris`.
+
+```{r}
+#| label: gg-roc-iris
+rf_iris <- rfsrc(Species ~ ., data = iris, ntree = 100)
+plot(gg_roc(rf_iris, which_outcome = 1, per_class = TRUE)) +
+  theme_hv_manuscript()
+```
+
+Each coloured curve is one species-versus-rest classifier. The well-separated
+species hug the top-left corner; any class whose curve sags toward the diagonal
+is the one the forest finds hardest to distinguish.
+
+## Brier score
+
+The Brier score is a calibration measure. In `ggRandomForests` `gg_brier()`
+operates on a right-censored *survival* forest, plotting the (integrated) Brier
+score over follow-up time -- the survival analogue of the calibration check we
+do for classification. We refit `pbc` as a survival forest to demonstrate.
+
+```{r}
+#| label: gg-brier
+data(pbc, package = "randomForestSRC")
+rf_surv <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100)
+plot(gg_brier(rf_surv)) + theme_hv_manuscript()
+```
+
+Lower curves mean better-calibrated survival predictions across time. Read it
+alongside the error curve and AUC: discrimination (ROC/AUC) tells you whether
+the ranking is right, while the Brier score tells you whether the predicted
+probabilities themselves can be trusted.
+
+## Reading performance plots
+
+- **AUC ranks, Brier calibrates.** A model can discriminate well (high AUC) yet
+  be poorly calibrated (high Brier), and vice versa -- always look at both.
+- **OOB by default.** These estimates come from observations each tree never
+  saw, so they approximate test-set performance without holding data back.
+- **Right forest, right tool.** ROC needs a classification/probability forest;
+  `gg_brier()` here targets survival forests. Match the metric to the family.
