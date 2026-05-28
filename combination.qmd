@@ -9,15 +9,39 @@ library(ggplot2)
 library(patchwork)
 ```
 
-The `patchwork` [@R-patchwork] package composes multiple ggplot objects into a single figure.
-The two patterns we reach for most are side-by-side comparisons and a main plot
-stacked above a companion panel. Each panel is built independently and composed
-at the last step, so you can adjust one without touching the other.
+Every recipe so far has produced one finished figure. This chapter is about the
+last step many manuscripts need: taking two or three of those figures and
+setting them side by side as a single labelled exhibit. Journals ask for it
+constantly. "Figure 1. Panel A shows survival; Panel B shows covariate balance"
+is one figure with one caption and one number, even though you built each panel
+separately. The patchwork package [@R-patchwork] is how we assemble them, and
+because the panels stay independent until the final line, you can re-style any
+one of them without disturbing the rest.
 
-## Building the panels
+## When to use it
 
-We build two small hvtiPlotR [@R-hvtiPlotR] plots from the `sample_*()` generators: a survival
-curve and a covariate-balance panel.
+Compose a combination figure when the panels are stronger together than apart.
+That is not the same as "whenever you have more than one plot." A good reason to
+combine: two views of the same cohort that the reader should compare at a glance
+(the outcome and the balance check that justifies it), or a main plot paired
+with a companion strip (a survival curve above its numbers-at-risk table). A bad
+reason: cramming unrelated figures together to save a figure number. If a reader
+would not look back and forth between the panels, they belong in separate
+figures.
+
+The mechanics are deliberately small. patchwork gives you two operators (`|`
+puts plots in a row, `/` stacks them in a column), `plot_layout()` to set the
+relative sizes, and `plot_annotation()` to add the shared title and the A, B, C
+panel tags. Everything else is the ggplot you already know.
+
+## The plots you already built
+
+Where a single-figure recipe needs a data frame, a composition recipe needs the
+finished plots. So the "data" here is two hvtiPlotR [@R-hvtiPlotR] plots built
+the way the earlier chapters built them: a survival curve and a covariate
+balance panel. We assign each to a name (`p_km`, `p_cb`) and do nothing else to
+them yet. That naming is the whole trick, each panel is a self-contained object
+we compose later.
 
 ```{r}
 #| label: combo_panels
@@ -44,10 +68,11 @@ p_cb <- plot(cb, alpha = 0.8) +
   theme_hv_poster()
 ```
 
-## Side-by-side plots
+## Build it
 
-The `|` operator places two plots next to each other in the same row, sharing
-the figure height; `/` stacks them vertically.
+Start with the simplest composition: two panels in a row. The `|` operator
+places `p_cb` and `p_km` next to each other, sharing the figure height. We widen
+the chunk (`fig-width: 10`) so neither panel is squeezed.
 
 ```{r}
 #| label: combo_side_by_side
@@ -55,11 +80,37 @@ the figure height; `/` stacks them vertically.
 p_cb | p_km
 ```
 
-## Controlling relative widths and heights
+That is the bare composite. It reads, but the two panels split the width evenly
+even though the balance plot has long covariate labels that want more room. Most
+real combination figures need three more things layered on: a deliberate size
+split, panel tags, and a shared title. We add them in the sections below, the
+same way you decorate a single plot, one layer at a time.
 
-`plot_layout(widths = ...)` sets relative widths as a numeric vector —
-`c(2, 1)` makes the left panel twice as wide as the right. Use `heights` the
-same way for stacked layouts.
+## Read it
+
+A combination figure asks the reader to do something a single panel does not:
+move between panels and connect them. Whether that lands is about the
+composition, not the data. Look for:
+
+- **Panel tags that match the caption.** The A, B, C labels are how the caption
+  points at a panel ("Panel B shows..."). If the tags are missing or out of
+  order, the caption has nothing to anchor to. Set them once and check they read
+  left-to-right, top-to-bottom.
+- **A size split that follows the content.** When one panel carries long axis
+  labels or a tall legend, an even split crushes it. The relative widths should
+  give each panel the room its content needs, not a reflexive fifty-fifty.
+- **Shared structure doing shared work.** Stacking a plot above its own
+  numbers-at-risk strip works because they share an x-axis; the reader's eye
+  drops straight down from a curve to its at-risk count. If two stacked panels
+  do not share an axis, stacking implies a relationship that is not there.
+
+## Variations
+
+### Controlling relative widths and heights
+
+`plot_layout(widths = ...)` takes a numeric vector of relative widths. `c(2, 1)`
+makes the left panel twice as wide as the right, which suits the balance plot's
+long labels. `heights` does the same for stacked layouts.
 
 ```{r}
 #| label: combo_layout
@@ -68,11 +119,13 @@ same way for stacked layouts.
   plot_layout(widths = c(2, 1))   # left panel twice as wide as right
 ```
 
-## Stacking a plot above a risk table
+### Stacking a plot above a risk table
 
-`hv_survival()` stores the numbers-at-risk table as a data frame at
-`km$tables$risk` — columns `strata`, `report_time`, `n.risk`. Build a ggplot
-text panel from it, then stack with `/`.
+A survival curve reads best with its numbers-at-risk strip directly below, the
+two sharing an x-axis. `hv_survival()` stores that table as a data frame at
+`km$tables$risk` (columns `strata`, `report_time`, `n.risk`), so we build a thin
+ggplot text panel from it and stack with `/`. The `plot_layout(heights = ...)`
+keeps the table strip short.
 
 ```{r}
 #| label: combo_risk_table
@@ -94,11 +147,12 @@ p_km / rt_panel +
   plot_layout(heights = c(4, 1))
 ```
 
-## Shared panel tags
+### Shared panel tags and a figure title
 
-`plot_annotation()` adds a shared title or panel tags (A, B, C...) across all
-panels. Setting `tag_levels = "A"` generates the tags most journals require.
-The `&` operator applies a shared `theme()` to every panel at once.
+`plot_annotation()` adds the shared title and the panel tags most journals
+require. `tag_levels = "A"` numbers the panels A, B, C... automatically. The `&`
+operator applies a `theme()` to every panel at once, so you format the tags in
+one place rather than per panel.
 
 ```{r}
 #| label: combo_annotation
@@ -110,3 +164,22 @@ The `&` operator applies a shared `theme()` to every panel at once.
   ) &
   theme(plot.tag = element_text(size = 12, face = "bold"))
 ```
+
+## Pitfalls
+
+- **Compose last, style first.** Finish each panel as its own figure before you
+  combine. Trying to fix a panel's axes or theme after composition means
+  reaching back through the patchwork, which is harder than re-styling the named
+  object and re-composing.
+- **Even splits crush uneven panels.** The default 50/50 width ignores that one
+  panel may carry long labels or a legend. Reach for `plot_layout(widths = ...)`
+  whenever a panel looks pinched.
+- **Tag once, at the composition.** Set `tag_levels` in `plot_annotation()`, not
+  by hand inside each panel. Hand-set tags drift out of order the moment you
+  reorder the panels.
+- **Stacking implies a shared axis.** Putting one panel directly above another
+  tells the reader the x-axes line up. If they do not, either give the panels a
+  genuinely shared axis or set them side by side instead.
+- **One caption, one story.** A combination figure gets one caption. If you
+  cannot write a single sentence that ties the panels together, that is the
+  signal they should be separate figures.
