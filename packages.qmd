@@ -1,8 +1,8 @@
 # Packages
 
-A short stack does most of the work in this book. `ggplot2` is the foundation;
-everything else either builds figures on top of it or supplies the modeling
-output we plot.
+A short stack does most of the work in this book. `ggplot2` [@R-ggplot2] is the
+foundation; everything else either builds figures on top of it or supplies the
+modeling output we plot.
 
 ```{r}
 #| label: load-packages
@@ -17,25 +17,29 @@ library(patchwork)        # compose multi-panel figures
 
 What each one is for:
 
-- **hvtiPlotR** -- the core of the book. It wraps the figures we publish into a
-  two-step API: an `hv_*()` constructor validates the data and returns an object,
-  and `plot()` turns that object into a bare ggplot. It also carries the house
-  themes (`theme_hv_manuscript()`, `theme_hv_poster()`, the PowerPoint themes)
-  and the save helpers.
-- **hvtiRutilities** -- the data-governance side: data dictionaries, variable
-  labels, dataset manifests, and the synthetic-data generators we use so the
-  examples run without touching real patient data.
-- **ggRandomForests**, **randomForestSRC**, **varPro** -- the random-forest
-  stack. `randomForestSRC` fits the forest, `varPro` does variable selection, and
-  `ggRandomForests` turns either one into a ggplot. These load in the random
-  forest chapters where they are used.
-- **TemporalHazard** -- our R port of the SAS/C HAZARD module, for parametric and
-  nonparametric hazard modeling. It loads in its own chapter.
-- **gt** -- publication-quality tables. We use it directly for now; a companion
-  `hvtiRtables` package is planned to give tables the same house treatment the
-  plots get.
-- **patchwork** -- composes several plots into one figure with shared labels and
-  panel tags.
+- **hvtiPlotR** [@R-hvtiPlotR] -- the core of the book. It wraps the figures we
+  publish into a two-step API: an `hv_*()` constructor validates the data and
+  returns an object, and `plot()` turns that object into a bare ggplot. It also
+  carries the house themes (`theme_hv_manuscript()`, `theme_hv_poster()`, the
+  PowerPoint themes) and the save helpers.
+- **hvtiRutilities** [@R-hvtiRutilities] -- the data-governance side: data
+  dictionaries, variable labels, dataset manifests, and the synthetic-data
+  generators we use so the examples run without touching real patient data.
+- **ggRandomForests** [@R-ggRandomForests], **randomForestSRC**
+  [@R-randomForestSRC; @randomForestSRC2007; @randomForestSRC2008], and **varPro**
+  [@R-varPro] -- the random-forest stack. `randomForestSRC` fits the forest,
+  `varPro` does variable selection, and `ggRandomForests` turns either one into a
+  ggplot. These load in the random forest chapters where they are used.
+- **TemporalHazard** [@R-TemporalHazard] -- our R port of the SAS/C HAZARD
+  module, for parametric and nonparametric hazard modeling. It loads in its own
+  chapter.
+- **gt** [@R-gt] -- publication-quality tables. We use it directly for now; a
+  companion `hvtiRtables` package is planned to give tables the same house
+  treatment the plots get.
+- **patchwork** [@R-patchwork] -- composes several plots into one figure with
+  shared labels and panel tags.
+- **survival** [@R-survival; @survival-book] -- the `Surv()` objects and
+  Kaplan-Meier machinery underneath the survival figures.
 
 You do not need all of these for any single figure. Each chapter loads what it
 uses in its first chunk.
