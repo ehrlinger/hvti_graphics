@@ -1,6 +1,12 @@
 # Parametric hazard modeling with TemporalHazard
 
-`TemporalHazard` [@R-TemporalHazard] is the R port of the SAS/C `HAZARD` module developed for cardiac-surgery outcomes research. It fits parametric multi-phase hazard models (the classic Blackstone early/constant/late decomposition) alongside the usual nonparametric estimators — Kaplan-Meier survival and the Nelson-Aalen cumulative hazard, built on the survival package [@R-survival]. This chapter walks through the nonparametric estimates, a parametric Weibull fit, competing-risks cumulative incidence, and model diagnostics, plotting each result with `hvtiPlotR::theme_hv_manuscript()`.
+`TemporalHazard` [@R-TemporalHazard] is the team's R port of the SAS/C `HAZARD`
+module that Blackstone and colleagues wrote for cardiac-surgery outcomes
+research. It does two jobs. The first is the nonparametric pair you already know
+from the survival chapter: Kaplan-Meier survival and the Nelson-Aalen cumulative
+hazard, both built on the survival package [@R-survival]. The second is the part
+that makes the package worth its own chapter: a *parametric* multi-phase hazard
+fit, the classic early/constant/late decomposition of risk over time.
 
 ```{r}
 #| label: setup
@@ -11,7 +17,35 @@ library(ggplot2)
 library(hvtiPlotR)
 ```
 
-We use the bundled `cabgkul` dataset throughout the survival/hazard sections: 5,880 patients with a follow-up time `int_dead` (interval to death, in years) and an event indicator `dead` (1 = death, 0 = censored). For the competing-risks section we switch to the bundled `omc` dataset, which records both thromboembolic events and death.
+## When to use it
+
+A Kaplan-Meier curve answers "how many are still event-free at time *t*." A
+hazard curve answers a different and often more clinically interesting question:
+"how dangerous is *right now*." After a cardiac operation that instantaneous
+risk is rarely flat. It spikes in the first weeks (the surgical insult, the
+early failures), settles into a long low plateau, then climbs again years later
+as the cohort ages. Reach for a parametric hazard model when you want to *see*
+those phases as a smooth curve rather than the noisy step function a raw event
+count gives you, and when you want each phase summarised by a parameter you can
+report and compare across cohorts.
+
+The other reason to reach for this package is lineage. For decades the team
+described risk with the SAS-HAZARD module, and reviewers in this field expect
+that early-peak, constant-phase, late-rise vocabulary. `TemporalHazard` keeps
+the same decomposition in R, so a figure you build here reads the way the
+reviewers already think. You fit the model once with `hazard()`, then ask it for
+survival, cumulative hazard, or the instantaneous hazard over whatever time grid
+you like.
+
+## The data it needs
+
+Everything in this chapter runs on data bundled with the package, so the recipe
+works before you point it at your own extract. For the survival and hazard
+sections we use `cabgkul`: 5,880 patients with a follow-up time `int_dead`
+(interval to death, in years) and an event indicator `dead` (`1` = death,
+`0` = censored). That is the same long format the survival chapter used, one row
+per patient with a time and a 0/1 event. The competing-risks section switches to
+`omc`, which records thromboembolic events and death on the same patients.
 
 ```{r}
 #| label: load-data
@@ -19,9 +53,17 @@ data(cabgkul, package = "TemporalHazard")
 str(cabgkul)
 ```
 
-## Nonparametric estimates
+## Build it
 
-`hzr_kaplan()` returns a data frame (class `hzr_kaplan`) with one row per event time and columns `time`, `n_risk`, `n_event`, `n_censor`, `survival`, `std_err`, `cl_lower`, `cl_upper`, `cumhaz`, `hazard`, `density`, and `life`. We plot the product-limit survival estimate with its logit-transformed confidence band.
+### Nonparametric estimates first
+
+Before fitting anything parametric, look at the empirical curves. They are the
+yardstick every parametric fit is later checked against, and they make no
+distributional assumption. `hzr_kaplan()` returns a data frame (class
+`hzr_kaplan`) with one row per event time and the columns you need to draw a
+product-limit curve: `time`, `n_risk`, `n_event`, `survival`, the
+logit-transformed band `cl_lower`/`cl_upper`, and the derived `cumhaz`,
+`hazard`, `density`, and `life`.
 
 ```{r}
 #| label: km
@@ -36,7 +78,12 @@ ggplot(km, aes(x = time, y = survival)) +
   theme_hv_manuscript()
 ```
 
-`hzr_nelson()` returns the Nelson-Aalen cumulative hazard (class `hzr_nelson`) with columns `time`, `n_risk`, `n_event`, `weight_sum`, `cumhaz`, `std_err`, `cl_lower`, `cl_upper`, `hazard`, and `cum_events`. We plot the cumulative hazard with its lognormal confidence limits.
+`hzr_nelson()` gives the Nelson-Aalen cumulative hazard (class `hzr_nelson`):
+`time`, `n_risk`, `n_event`, `weight_sum`, `cumhaz` with its lognormal limits
+`cl_lower`/`cl_upper`, `hazard`, and a running `cum_events`. The cumulative
+hazard is the same information as the survival curve turned the other way up; its
+slope at any point *is* the instantaneous hazard, which is what the parametric
+fit below will try to summarise.
 
 ```{r}
 #| label: nelson
@@ -51,9 +98,16 @@ ggplot(na, aes(x = time, y = cumhaz)) +
   theme_hv_manuscript()
 ```
 
-## Parametric hazard fit
+### The parametric fit
 
-`hazard()` fits a parametric model when `fit = TRUE`. Starting values for the parameter vector `theta` are supplied explicitly; for a Weibull the two parameters are the scale `mu` and the shape `nu`. The returned object (class `hazard`) is a list with elements `call`, `spec`, `data`, `fit`, `legacy_args`, and `engine`; the fitted parameters live in `fit$fit$theta`.
+`hazard()` fits the parametric model when you pass `fit = TRUE`. The one
+argument you must not skip is `theta`, the starting values for the parameter
+vector. The optimiser needs somewhere to begin, and there is no safe default it
+can guess for you, so leaving `theta` out makes the fit (and every later
+`predict()`) error. For a Weibull the two parameters are the scale `mu` and the
+shape `nu`; `theta = c(0.01, 1.0)` is a reasonable start for both. The returned
+object (class `hazard`) is a list with `call`, `spec`, `data`, `fit`,
+`legacy_args`, and `engine`; the fitted parameters live in `fit$fit$theta`.
 
 ```{r}
 #| label: fit
@@ -62,7 +116,13 @@ fit <- hazard(time = cabgkul$int_dead, status = cabgkul$dead,
 summary(fit)
 ```
 
-`predict.hazard()` evaluates the fitted model over a time grid. For `type = "survival"` and `type = "cumulative_hazard"` it returns a plain numeric vector aligned to the `time` column of `newdata`. (For an intercept-only model `type = "hazard"` returns the constant relative hazard `exp(eta) = 1`, so we derive the instantaneous hazard by differencing the cumulative hazard.)
+`predict.hazard()` evaluates the fitted model over any time grid you hand it in
+`newdata`. For `type = "survival"` and `type = "cumulative_hazard"` it returns a
+plain numeric vector lined up with the `time` column. The instantaneous hazard
+takes one extra step. This model is intercept-only, so `type = "hazard"` returns
+the constant relative hazard `exp(eta) = 1` rather than the curve we want; the
+honest way to recover the instantaneous rate is to difference the cumulative
+hazard, since the hazard is by definition its slope.
 
 ```{r}
 #| label: predict
@@ -78,6 +138,9 @@ pred <- data.frame(
 pred$hazard <- c(NA, diff(pred$cumhaz) / diff(pred$time))
 str(pred)
 ```
+
+The fitted model gives us a smooth survival curve, its cumulative hazard, and
+the instantaneous hazard rate, one panel each.
 
 ```{r}
 #| label: predict-survival
@@ -106,13 +169,42 @@ ggplot(subset(pred, !is.na(hazard)), aes(x = time, y = hazard)) +
   theme_hv_manuscript()
 ```
 
-The fitted shape `nu < 1` produces the monotonically declining hazard typical of post-operative mortality risk that is highest early and then falls.
+## Read it
 
-## Competing risks
+A hazard curve is read by its shape, phase by phase. The Weibull above is the
+simplest case: its shape parameter `nu < 1` produces a hazard that starts high
+and falls monotonically, which is exactly the early-risk story of
+post-operative mortality. Risk is greatest in the first months and then eases.
 
-`hzr_competing_risks()` estimates cumulative incidence functions for an integer-coded `event` vector (0 = censored, 1, 2, ... = competing event types). It returns a data frame (class `hzr_competing_risks`) with `time`, `n_risk`, per-type `n_event_k`, `n_censor`, overall event-free `surv`, per-type cumulative incidence `incid_k`, and standard errors `se_surv` / `se_k`.
+In the fuller multi-phase model the curve has three readable regions. An **early
+phase** is the steep descent right after the operation, the perioperative risk
+working itself out. A **constant phase** is the long flat middle, the background
+rate of a stable cohort; a horizontal hazard there means risk is no longer
+related to how long ago the surgery was. A **late phase** is an upturn years out,
+typically the cohort aging or a prosthesis wearing. When you describe a figure
+like this to a reviewer, name the phases: "an early peak that resolves by year
+one, a flat interval, and a late rise after year ten." That is the language the
+SAS-HAZARD lineage trained everyone to expect. Read the *cumulative* hazard
+differently: it only ever rises, and it is its slope, not its height, that
+carries the hazard. A flattening cumulative-hazard curve means low current risk
+even though the total keeps climbing.
 
-The `omc` dataset records thromboembolic events (`te1`, `te2`, `te3`) and death (`dead`). We code a two-cause competing-risks outcome: type 1 = any thromboembolic event, type 2 = death.
+## Variations
+
+### Competing risks
+
+Death is not the only thing that can happen, and once a patient dies they can no
+longer have a thromboembolic event. Treating one outcome as plain censoring for
+the other overstates incidence; the cumulative incidence function is the honest
+summary. `hzr_competing_risks()` takes an integer-coded `event` vector
+(`0` = censored, `1, 2, ...` = competing event types) and returns a data frame
+(class `hzr_competing_risks`) with `time`, `n_risk`, per-type `n_event_k`,
+`n_censor`, the event-free `surv`, per-type cumulative incidence `incid_k`, and
+standard errors.
+
+The `omc` dataset records thromboembolic events (`te1`, `te2`, `te3`) and death
+(`dead`). We collapse them into a two-cause outcome: type 1 is any
+thromboembolic event, type 2 is death.
 
 ```{r}
 #| label: cr-data
@@ -125,7 +217,9 @@ cr <- hzr_competing_risks(omc$int_dead, event)
 head(cr)
 ```
 
-We reshape the two incidence columns to long form and plot both cumulative incidence curves.
+Reshape the two incidence columns to long form and plot both curves together.
+Read them as a pair: the two cumulative incidence curves climb toward a shared
+ceiling, and the gap between them is the relative burden of each cause.
 
 ```{r}
 #| label: cr-plot
@@ -142,9 +236,16 @@ ggplot(cif, aes(x = time, y = incidence, colour = cause)) +
   theme_hv_manuscript()
 ```
 
-## Diagnostics
+### Diagnostics
 
-`hzr_gof()` compares the fitted parametric model against the Kaplan-Meier estimate. With its default time grid (the observed event times) it returns columns `time`, `n_risk`, `n_event`, `n_censor`, `km_surv`, `km_cumhaz`, `par_surv`, `par_cumhaz`, `cum_observed`, and `cum_expected`, plus a `residual` (expected minus observed). A `"summary"` attribute carries the scalar conservation diagnostics.
+A parametric fit is only worth reporting if it tracks the data. `hzr_gof()`
+compares the fitted model against the Kaplan-Meier estimate. Call it on the fit
+with no extra arguments: it populates the observed and expected event counts on
+its own default grid (the observed event times), and handing it a custom grid
+leaves those columns empty. The returned columns are `time`, `n_risk`,
+`n_event`, `n_censor`, `km_surv`, `km_cumhaz`, `par_surv`, `par_cumhaz`,
+`cum_observed`, and `cum_expected`, plus a `residual` (expected minus observed);
+a `"summary"` attribute carries the scalar conservation diagnostics.
 
 ```{r}
 #| label: gof
@@ -153,7 +254,9 @@ attr(gof, "summary")
 head(gof)
 ```
 
-Plotting the parametric survival against the Kaplan-Meier survival shows how closely the Weibull tracks the empirical curve.
+Overlaying the parametric survival on the Kaplan-Meier survival is the quickest
+visual check. Where the two curves sit on top of each other the Weibull is
+faithful; where they peel apart it is missing structure in the data.
 
 ```{r}
 #| label: gof-plot
@@ -170,7 +273,10 @@ ggplot(gof_long, aes(x = time, y = survival, colour = model)) +
   theme_hv_manuscript()
 ```
 
-The cumulative observed versus expected events curve is the survival-analysis analogue of a calibration plot; close agreement (a conservation ratio near 1) indicates the parametric model reproduces the event count over time.
+The cumulative observed-versus-expected curve is the survival analogue of a
+calibration plot. When the two lines stay together (a conservation ratio near 1)
+the model is reproducing the actual event count over time, not just the shape of
+the curve.
 
 ```{r}
 #| label: gof-oe
@@ -187,7 +293,12 @@ ggplot(oe, aes(x = time, y = events, colour = kind)) +
   theme_hv_manuscript()
 ```
 
-Finally, `hzr_calibrate()` bins a continuous covariate into quantile groups and reports the observed event probability per bin. It returns columns `group`, `n`, `events`, `mean`, `min`, `max`, `prob`, and `link_value` (the event probability on the chosen link scale). Here we calibrate against follow-up time itself as a simple worked example.
+Finally, `hzr_calibrate()` bins a continuous covariate into quantile groups and
+reports the observed event probability per bin, returning `group`, `n`,
+`events`, `mean`, `min`, `max`, `prob`, and `link_value` (the event probability
+on the chosen link scale). Here we calibrate against follow-up time itself as a
+worked example; against a real risk score the same plot tells you whether
+predicted and observed risk agree across the range.
 
 ```{r}
 #| label: calibrate
@@ -201,3 +312,22 @@ ggplot(cal, aes(x = mean, y = prob)) +
        title = "Calibration across follow-up-time deciles") +
   theme_hv_manuscript()
 ```
+
+## Pitfalls
+
+- **`hazard()` needs starting values.** Pass `theta` explicitly, for example
+  `theta = c(0.01, 1)`. Without it the optimiser has no starting point and the
+  fit (and every `predict()` that follows) errors out. This is the single most
+  common reason a `TemporalHazard` script fails on first run.
+- **The instantaneous hazard is not free.** For an intercept-only model
+  `predict(type = "hazard")` returns the constant relative hazard, not the curve
+  you want. Derive the instantaneous rate by differencing the cumulative hazard,
+  as in the `predict` chunk above; the hazard is its slope.
+- **Let `hzr_gof()` choose its own grid.** It fills the observed and expected
+  event counts only on its default event-time grid. Hand it a custom grid and
+  `cum_observed`/`cum_expected` come back empty, and the calibration plots have
+  nothing to draw. Call `hzr_gof(fit)` with no grid argument.
+- **A pretty fit is not a faithful one.** Always run the goodness-of-fit overlay
+  before you quote a parametric hazard. If the Weibull curve drifts off the
+  Kaplan-Meier line, the smooth shape is hiding a misfit, and a richer
+  multi-phase specification is the right next step.
