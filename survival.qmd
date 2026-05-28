@@ -1,9 +1,114 @@
 # Survival Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+`hv_survival()` estimates the Kaplan-Meier product-limit survival function and
+stores the data for five companion panels plus tidy summary tables in
+`$tables`. Build the S3 object once, then call `plot()` with the `type`
+argument to render a bare ggplot for the selected panel (default
+`"survival"`). Decorate each panel with scales, labels, and a theme.
+Confidence intervals use the logit transform at 0.95 by default.
+
+## Sample data
+
+`sample_survival_data()` builds a simulated cohort in the long format
+`hv_survival()` expects: one row per patient with `time` and `event` columns.
+Build the object once and reuse it across every variant below.
 
 ```{r}
-1 + 1
+#| label: km_data
+dta_km <- sample_survival_data(n = 500, seed = 42)
+head(dta_km)
+
+# Build the S3 object once; reuse across all plot variants below
+km <- hv_survival(dta_km)
+```
+
+## Survival curve
+
+The default panel is the survival curve with the logit-transform 95% CI
+ribbon. Layer scales, labels, and a theme onto the bare plot with `+`.
+
+```{r}
+#| label: km_styled
+plot(km, alpha = 0.8) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Freedom from Death (%)",
+       title = "Overall Survival") +
+  annotate("text", x = 1, y = 5, label = paste0("n = ", nrow(dta_km)),
+           hjust = 0, size = 3.5) +
+  theme_hv_poster()
+```
+
+The at-risk strip and the per-time-point report (point estimates with CIs)
+are stored in `$tables`; read either out directly with `km$tables$risk` or
+`km$tables$report`.
+
+## Cumulative hazard
+
+`type = "cumhaz"` gives the Nelson-Aalen cumulative hazard `H(t) = -log S(t)`,
+a monotonically non-decreasing curve whose slope is the instantaneous hazard.
+
+```{r}
+#| label: km_cumhaz
+plot(km, type = "cumhaz") +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Years after Operation", y = "Cumulative Hazard H(t)",
+       title = "Nelson-Aalen Cumulative Hazard") +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  theme_hv_poster()
+```
+
+## Log-log survival (proportional-hazards check)
+
+`type = "loglog"` plots `log(-log S(t))` against `log(time)`. Parallel lines
+across strata indicate proportional hazards. To see two strata, fit with
+`group_col`.
+
+```{r}
+#| label: km_loglog
+dta_km_s <- sample_survival_data(
+  n             = 500,
+  strata_levels = c("Type A", "Type B"),
+  hazard_ratios = c(1, 1.4),
+  seed          = 42
+)
+km_s <- hv_survival(dta_km_s, group_col = "valve_type")
+
+plot(km_s, type = "loglog") +
+  scale_color_manual(
+    values = c("Type A" = "steelblue", "Type B" = "firebrick"),
+    name   = "Valve Type"
+  ) +
+  labs(x = "log(Years after Operation)", y = "log(-log S(t))",
+       title = "Log-Log Survival") +
+  theme_hv_poster()
+```
+
+## Integrated life table (restricted mean survival)
+
+`type = "life"` is the integrated survivorship — the area under the survival
+curve up to time `t`, equal to restricted mean survival time at that horizon.
+It rises linearly while `S(t) ~ 1` and bends as events accumulate.
+
+```{r}
+#| label: km_life
+plot(km, type = "life") +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Years after Operation",
+       y = "Restricted Mean Survival (years)",
+       title = "Integral of Survivorship") +
+  theme_hv_poster()
 ```
