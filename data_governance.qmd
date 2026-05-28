@@ -1,1 +1,105 @@
 # Data governance and reproducibility
+
+Reproducible analysis starts before the first plot. A documented dataset, typed and labelled variables, and a manifest pinning the exact extract are the difference between a figure you can defend and one you cannot. The `hvtiRutilities` package supplies the primitives: synthetic data for examples, a data dictionary, label and type maps, dataset manifests, and version diffs.
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(hvtiRutilities)
+library(gt)
+```
+
+## A reproducible sample dataset
+
+`generate_survival_data()` produces a deterministic synthetic survival cohort. Fixing the seed makes every downstream table and figure reproducible without touching protected health information.
+
+```{r}
+#| label: sample-data
+dat <- generate_survival_data(n = 200, seed = 42)
+str(dat)
+```
+
+Each column carries a `label` attribute, which the governance helpers below read and propagate.
+
+## Data dictionary
+
+`data_dictionary()` returns a per-column summary as a data frame: variable name, label, class, distinct values, percent missing, and a compact distribution summary. It renders directly through `gt()`.
+
+```{r}
+#| label: dict
+dd <- data_dictionary(dat)
+gt(dd) |>
+  tab_header(title = "Data dictionary")
+```
+
+## Variable labels
+
+`label_map()` returns the current variable-to-label mapping as a two-column (`key`, `label`) data frame. Holding labels in one place means they travel into tables and figures unchanged, so axis titles and column headers stay consistent across the analysis.
+
+```{r}
+#| label: labels
+lm <- label_map(dat)
+gt(head(lm, 10))
+```
+
+## Inferring R data types
+
+`r_data_types()` classifies each column by role and returns the dataset with columns coerced to the inferred type — character IDs become factors, 0/1 indicators become logical. Comparing the inferred class against the source class shows what the classifier changed.
+
+```{r}
+#| label: dtypes
+typed <- r_data_types(dat)
+data.frame(
+  variable = names(dat),
+  source   = vapply(dat,   \(x) class(x)[1], character(1)),
+  inferred = vapply(typed, \(x) class(x)[1], character(1)),
+  row.names = NULL
+) |>
+  subset(source != inferred) |>
+  gt() |>
+  tab_header(title = "Columns retyped by r_data_types()")
+```
+
+## Dataset manifests
+
+A manifest records provenance for every extract: source system, extract date, row count, and a SHA-256 hash of the file. `update_manifest()` appends an entry (hashing the file on disk) and `verify_manifest()` re-hashes the data directory against the manifest to confirm nothing drifted. The chunk below is not evaluated because it writes files; run it interactively.
+
+```{r}
+#| label: manifest
+#| eval: false
+saveRDS(dat, "cohort.rds")
+mp <- tempfile(fileext = ".yaml")
+
+update_manifest(
+  file         = "cohort.rds",
+  manifest_path = mp,
+  extract_date = Sys.Date(),
+  n_rows       = nrow(dat),
+  source       = "CORR DWH"
+)
+
+verify_manifest(manifest_path = mp, data_dir = ".", stop_on_error = FALSE)
+```
+
+A representative manifest entry:
+
+```yaml
+datasets:
+- file: cohort.rds
+  extract_date: '2026-05-28'
+  n_rows: 200
+  sha256: 8b3e0188eae294e61a16f0e09e3989e8b5249601209bde987fb5153c9ab1bd76
+  source: CORR DWH
+```
+
+## Comparing dataset versions
+
+When a data warehouse re-delivers an extract, `compare_datasets()` diffs the old and new versions and reports row-count and structural changes through its print method — a fast check that a re-delivery is what you expected.
+
+```{r}
+#| label: compare
+old <- generate_survival_data(n = 150, seed = 42)
+new <- generate_survival_data(n = 200, seed = 99)
+compare_datasets(old, new)
+```
