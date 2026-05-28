@@ -6,10 +6,31 @@ Status: approved (pending spec review)
 ## Goal
 
 Fill the stub chapters of the Quarto book *HVTI ggplot graphics recipes*
-(`hvti_graphics`) with self-contained, rendered worked examples built on the
-`hvtiPlotR` package (v2.3.1, installed). Every plot listed in the book outline
-gets at least one worked example; gaps the package does not cover are filled
-with base-ggplot recipes styled to match.
+(`hvti_graphics`) with self-contained, rendered worked examples. The primary
+engine is the `hvtiPlotR` package (v2.3.1); the book is extended to also cover
+the related visualization stack — `ggRandomForests`, `randomForestSRC`,
+`varPro`, and `temporal_hazard`. Every plot listed gets at least one worked
+example; gaps no package covers are filled with base-ggplot recipes styled to
+match. The book renders to **HTML and PDF (LaTeX)** so a generated `.tex`/PDF
+deliverable exists.
+
+## Packages covered
+
+| Package | Role | Plot surface |
+|---|---|---|
+| `hvtiPlotR` (2.3.1) | clinical/descriptive ggplot helpers | `hv_*` constructor → `plot()` families |
+| `ggRandomForests` (2.7.3) | ggplot2 visualization of random forests | `gg_*` + `autoplot`/`plot` methods |
+| `randomForestSRC` (3.3.5) | RF fitting engine + example datasets | `rfsrc()`; datasets veteran, pbc, breast, wine, housing |
+| `varPro` | variable priority / selection | visualized via ggRandomForests `gg_varpro`, `gg_beta_varpro`, `gg_ivarpro`, `gg_isopro`, `gg_partial_varpro` |
+| `temporal_hazard` (1.0.3) | pure-R survival/hazard modeling | `hazard()`/`predict()` → manual ggplot; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof` |
+
+`hazard` (the C library) is the validation engine behind `temporal_hazard` and
+is **not** an R package — out of scope for plotting; mentioned only as the
+engine `temporal_hazard` ports.
+
+`temporal_hazard` is not currently installed; its source lives at
+`~/Documents/GitHub/temporal_hazard`. It must be installed (e.g.
+`devtools::install_local`) for its examples to render. See Risks.
 
 ## Source material
 
@@ -78,6 +99,28 @@ function families that do not fit a generic plot type. New files marked **new**.
 | `balance.qmd` **new** | `hv_balance` covariate balance, `hv_followup` goodness-of-followup |
 | `combination.qmd` | patchwork multi-panel composites |
 
+### Random forests & variable selection part (new)
+
+New book part registered in `_quarto.yml`. RF examples fit a model with
+`randomForestSRC::rfsrc()` on a bundled dataset, then visualize with
+ggRandomForests. varPro examples fit `varPro::varpro()` then visualize.
+
+| File | Functions / content | Dataset |
+|---|---|---|
+| `randomforests.qmd` **new** | part intro: fit-then-visualize workflow, `autoplot()` vs `plot()` | — |
+| `rf_error.qmd` **new** | `gg_error` — OOB error convergence | veteran (survival) |
+| `rf_predicted.qmd` **new** | `gg_rfsrc`, `gg_survival` — predicted response / survival | veteran, pbc |
+| `rf_vimp.qmd` **new** | `gg_vimp` — variable importance | pbc |
+| `rf_dependence.qmd` **new** | `gg_variable` (variable dependence), `gg_partial`/`gg_partial_rfsrc` (partial dependence) | pbc |
+| `rf_roc.qmd` **new** | `gg_roc`, `gg_brier` — classification performance | breast / wine |
+| `varpro.qmd` **new** | `gg_varpro`, `gg_beta_varpro`, `gg_ivarpro`, `gg_isopro`, `gg_partial_varpro` | housing / breast |
+
+### Survival modeling addition (figures part)
+
+| File | Functions / content |
+|---|---|
+| `temporal_hazard.qmd` **new** | `hazard()` fit → `predict()` hazard/cumhaz/survival ggplots; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof`. Placed after `nnt.qmd`. |
+
 ### Tables part
 
 | File | Content |
@@ -101,34 +144,62 @@ function families that do not fit a generic plot type. New files marked **new**.
 | `manuscripts.qmd` | manuscript PDF save with `hv_ggsave_dims` + `theme_hv_manuscript`; PowerPoint export (officer/rvg) |
 | `researchday.qmd` | poster sizing with `theme_hv_poster` + PDF save |
 
+## Output formats
+
+`_quarto.yml` gains a `pdf` (LaTeX) format alongside `html`, so the build
+produces a generated `.tex` and PDF. `pdflatex` is present on the system. The
+existing `typst` format is removed to avoid maintaining three renderers (HTML
+for browsing, PDF/LaTeX for the deliverable). Chunks that write external files
+(PowerPoint export via officer/rvg) are set `eval: false` so neither renderer
+attempts to emit binaries during the book build.
+
 ## Files touched
 
-- New chapter files: `hazard.qmd`, `nnt.qmd`, `consort.qmd`, `sankey.qmd`,
-  `balance.qmd` (5 new).
+- New chapter files (13): `hazard.qmd`, `nnt.qmd`, `temporal_hazard.qmd`,
+  `consort.qmd`, `sankey.qmd`, `balance.qmd`, `randomforests.qmd`,
+  `rf_error.qmd`, `rf_predicted.qmd`, `rf_vimp.qmd`, `rf_dependence.qmd`,
+  `rf_roc.qmd`, `varpro.qmd`.
 - Edited chapter files: scatter, survival, histograms, density, bar, boxplots,
   upset, spaghetti, postagestamp, specialty, combination, qt_tables,
   figure_tables, annotation, themes, colors, legends, manuscripts, researchday.
-- `_quarto.yml`: register the 5 new chapters in the correct parts.
+- `_quarto.yml`: register all new chapters and the new RF part; add `pdf`
+  format, remove `typst`.
+- Environment: install `temporal_hazard` from local source.
 
 ## Success criteria
 
-1. `quarto render` completes without error and produces HTML for every chapter.
-2. Every `hv_*` function family in the chapter plan has at least one rendered
-   worked example.
-3. Each example is self-contained: data via `sample_*()` (or base R), no
-   external files, no PHI.
+1. `quarto render` completes without error and produces **both HTML and a
+   generated `.tex`/PDF** for the book.
+2. Every plot function family in the chapter plan (hvtiPlotR `hv_*`,
+   ggRandomForests `gg_*`, varPro via `gg_*`, temporal_hazard `hazard()`/`hzr_*`)
+   has at least one rendered worked example.
+3. Each example is self-contained: data via `sample_*()`, bundled
+   randomForestSRC datasets, or base R — no external files, no PHI.
 4. Gap chapters (density, boxplots, postage-stamp) render base-ggplot examples
    styled with a `theme_hv_*` theme.
-5. New chapters appear in the book navigation via `_quarto.yml`.
+5. New chapters and the RF part appear in the book navigation via `_quarto.yml`.
 
 ## Out of scope
 
-- New functionality in `hvtiPlotR` itself.
-- Reorganizing the existing part structure beyond adding the listed chapters.
+- New functionality in any of the packages themselves.
+- The `hazard` C library (engine only; not an R package).
+- Reorganizing the existing part structure beyond adding the listed chapters
+  and the new RF part.
 - The `gt` table content beyond representative examples (not an exhaustive gt tutorial).
+
+## Risks
+
+- **`temporal_hazard` not installed.** Must `install_local` from
+  `~/Documents/GitHub/temporal_hazard` before rendering, else its chapter fails.
+  Fallback: set that chapter's chunks `eval: false` and show code only.
+- **RF rendering cost.** `rfsrc()` fits are slow; use small `ntree` and small
+  datasets, and rely on Quarto's freeze/cache so re-renders are cheap.
+- **PDF/LaTeX figure sizing.** Poster/PPT themes are large; for the PDF format,
+  rely on per-chunk `fig-width`/`fig-height` so wide figures don't overflow the
+  page.
 
 ## Verification
 
-`quarto render` from the repo root; inspect `_book/` HTML for each chapter.
-Per repo workflow: all changes land on branch `feat/plot-recipes` via PR; the
-user merges.
+`quarto render` from the repo root; confirm HTML in `_book/` and a generated
+`.tex`/PDF for each chapter/the book. Per repo workflow: all changes land on
+branch `feat/plot-recipes` via PR; the user merges.
