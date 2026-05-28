@@ -1,1 +1,92 @@
 # Variable and partial dependence
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(randomForestSRC)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+Variable importance ranks predictors but says nothing about the *shape* of
+their effect. Two complementary plots fill that gap:
+
+- **Variable dependence** shows the forest's predicted value for every
+  observation against an actual predictor value -- the raw, marginal picture.
+- **Partial dependence** averages out all other predictors, isolating the
+  effect of one variable on the prediction -- a smoother, model-level summary.
+
+We reuse the `pbc` survival forest from the previous chapter.
+
+```{r}
+#| label: rf-fit
+data(pbc, package = "randomForestSRC")
+rf <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100,
+            importance = TRUE)
+```
+
+For survival forests we evaluate dependence at a fixed follow-up time. The
+median follow-up is a natural choice.
+
+```{r}
+#| label: tval
+t_eval <- median(pbc$days)
+t_eval
+```
+
+## Variable dependence
+
+`gg_variable()` returns one predicted survival probability per observation. For
+a survival forest the `plot()` method needs a `time` to evaluate, and an `xvar`
+selection. Setting `panel = TRUE` lays the chosen predictors out side by side;
+each point is one patient and the blue curve is a loess smooth.
+
+```{r}
+#| label: gg-variable
+#| fig-height: 4
+gg_v <- gg_variable(rf)
+plot(gg_v, xvar = c("bili", "age", "albumin"), time = t_eval,
+     panel = TRUE) +
+  theme_hv_manuscript()
+```
+
+Reading the smooths: predicted survival at `r t_eval` days falls steeply as
+serum bilirubin rises, and declines with age, while higher albumin tracks with
+better survival. These are the marginal trends actually present in the data --
+including the scatter, which warns you how much spread underlies each trend.
+
+## Partial dependence
+
+Variable-dependence scatter is confounded by every other predictor. Partial
+dependence removes that confounding: for a grid of `bili` values the forest
+predicts each patient as if they had that value, then averages. The result is
+the marginal effect of `bili` with everything else held at its observed
+distribution.
+
+`gg_partial_rfsrc()` drives `randomForestSRC`'s partial-prediction machinery
+directly. It is the slow step -- we restrict it to a single variable at the
+median time and a modest evaluation grid (`n_eval`) to keep the render fast.
+
+```{r}
+#| label: gg-partial
+gg_p <- gg_partial_rfsrc(rf, xvar.names = "bili",
+                         partial.time = t_eval, n_eval = 25)
+plot(gg_p) + theme_hv_manuscript()
+```
+
+The partial-dependence curve is the *adjusted* version of the bilirubin panel
+above: the same downward trend, but now free of the influence of age, albumin
+and the rest. The flat scatter has collapsed into a single, interpretable
+dose-response line -- the cleanest summary of how bilirubin moves predicted
+survival.
+
+## Practical notes
+
+- **Pick a time.** Survival dependence is always read at a follow-up time;
+  changing `time`/`partial.time` can change the shape, so report which you used.
+- **Cost.** Partial dependence refits predictions across the grid. If it is too
+  slow, lower `n_eval`, restrict to one variable, or reduce `ntree`.
+- **Order of operations.** Use VIMP to choose *which* variables to inspect here;
+  there is no point profiling a variable the forest ignores.
