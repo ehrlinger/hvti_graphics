@@ -29,11 +29,14 @@ is applied the same way as everywhere else in the book: add
 
 The `veteran` lung-cancer trial data ships with `randomForestSRC`. We fit a
 survival forest and look at how the OOB error converges as trees are added.
+Pass `block.size = 1` so the forest records the OOB error after *every* tree --
+the default records it only at the final tree, which would leave `gg_error()`
+with a single point and no convergence curve to read.
 
 ```{r}
 #| label: rf-minimal
 data(veteran, package = "randomForestSRC")
-rf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100)
+rf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100, block.size = 1)
 plot(gg_error(rf)) + theme_hv_manuscript()
 ```
 
