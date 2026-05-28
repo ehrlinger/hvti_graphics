@@ -18,6 +18,22 @@ pull the numbers straight out and render them with `gt` [@R-gt]. As with the
 [publication tables](qt_tables.qmd) chapter, **these tables will migrate
 to the planned hvtiRtables package** once it is available.
 
+## When to use it
+
+A figure shows the shape of a result; the companion table gives the reader the
+numbers the shape rests on. The two go together when a curve hides how much data
+backs each region of it. The clearest case is the numbers-at-risk strip beneath
+a Kaplan-Meier curve: the curve might look confident out at ten years, but if
+only eight patients remain at risk there, the at-risk row is what tells the
+reader to read that tail with caution. Reach for a companion table whenever the
+figure invites a question the plot cannot answer on its own ("based on how
+many?") and you want the answer on the same page rather than buried in the text.
+
+We work through two cases the package already supports: the at-risk strip that a
+survival curve needs beside it, and the participation counts that sit beneath a
+longitudinal bar chart. In both, the numbers already live on the plot object, so
+we never recompute them and risk a table that disagrees with its own figure.
+
 ## Numbers at risk
 
 `hv_survival()` stores its companion tables in the object's `$tables`
@@ -108,8 +124,12 @@ lc_wide |>
   tab_stubhead(label = "Follow-up window")
 ```
 
-For reference, the same counts rendered as the in-figure table panel
-appear below the bar chart when the two are composed with `patchwork`.
+The `gt` version above is for a standalone table, say in the manuscript body or
+a supplement. When the numbers belong *inside* the figure, the package draws
+them as a table panel you stack under the chart. For reference, the same counts
+rendered as the in-figure table panel appear below the bar chart when the two
+are composed with `patchwork`. Building both from the same `lc$data` keeps the
+standalone table and the in-figure panel telling one story.
 
 ```{r}
 #| label: lc_figure
@@ -129,3 +149,23 @@ p_tbl <- plot(lc, type = "table") +
 
 p_bar / p_tbl + plot_layout(heights = c(3, 1))
 ```
+
+## Pitfalls
+
+- **At-risk counts must match the curve's time axis.** The risk strip is only
+  useful if its columns sit under the same time points the curve uses. If the
+  plot runs 0 to 20 years on a five-year grid, the at-risk table needs the same
+  grid, or the reader cannot line a count up with the part of the curve it
+  describes. Because `$tables$risk` is computed by the same constructor that
+  drew the curve, the report times already agree; the trap appears when you
+  hand-edit one axis or crop the plot with `coord_cartesian()` and forget the
+  table still shows the full range. Change the axis in one place and check the
+  other followed.
+- **Keeping the table and figure in sync.** The reason we pull numbers off the
+  plot object rather than recomputing them is to keep a single source of truth.
+  The moment you summarise the cohort separately for the table, the two can
+  drift: a filter applied to one and not the other, a different handling of
+  missing follow-up, a stale data load. If you must build a companion table by
+  hand, derive it from the exact frame the figure was built from, and re-derive
+  both whenever the data change. A figure and a table that disagree are worse
+  than either alone, because a reader cannot tell which to believe.
