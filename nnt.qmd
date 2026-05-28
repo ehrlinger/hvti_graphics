@@ -8,15 +8,32 @@ library(hvtiPlotR)
 library(ggplot2)
 ```
 
-Both plots in this chapter, from hvtiPlotR [@R-hvtiPlotR], take a pre-computed
-data frame and a single call — you name the estimate column and its CI bounds,
-then decorate the returned ggplot.
+## When to use it
 
-## Number needed to treat
+A hazard ratio tells a reviewer that one treatment is better, but it does not
+tell a patient what the choice is worth to them. These two figures translate a
+survival comparison into the language clinicians and patients actually use.
+The survival difference plots the gap between two survival curves over time: how
+many more patients out of a hundred are still alive at five years if they take
+the better arm. The number needed to treat (NNT) inverts that gap into a count:
+how many patients you must treat to prevent one event by a given time.
 
-`nnt_plot()` plots number needed to treat (or absolute risk reduction) over
-time. `sample_nnt_data()` generates two survival curves from a hazard-ratio
-contrast and computes NNT and ARR at each time point with CI bounds.
+Reach for the survival difference when you want to show the size and timing of a
+benefit and whether its confidence band clears zero. Reach for NNT when you want
+the bedside number, the figure that makes a small absolute benefit feel concrete
+or an over-hyped one feel modest. Both functions, from hvtiPlotR [@R-hvtiPlotR],
+take a pre-computed data frame and a single call: you name the estimate column
+and its CI bounds, then decorate the returned ggplot.
+
+## The data it needs
+
+Both functions expect one row per time point with an estimate column and
+explicit lower/upper CI columns that you name in the call. `sample_nnt_data()`
+generates two survival curves from a hazard-ratio contrast and computes NNT and
+ARR (absolute risk reduction) at each time point with CI bounds. The `groups`
+argument names the arms and sets their hazard multipliers; here the internal
+thoracic artery graft (ITA) carries 0.75 times the hazard of the saphenous vein
+graft (SVG) reference.
 
 ```{r}
 #| label: nnt_data
@@ -28,11 +45,10 @@ nnt_dat <- sample_nnt_data(
 head(nnt_dat)
 ```
 
-### NNT curve
+## Build it
 
-NNT decreases over time as the treatment benefit accumulates: early on you
-must treat many patients to prevent one event; later the survival gap widens
-and fewer are needed.
+The NNT curve takes the pre-computed estimate and its CI columns directly. The
+default `estimate_col` is `"nnt"`, so you need only name the CI bounds.
 
 ```{r}
 #| label: nnt_curve
@@ -49,10 +65,31 @@ nnt_plot(
   theme_hv_poster()
 ```
 
+## Read it
+
+An NNT curve falls over time, and that fall is the whole point. Look for:
+
+- **The downward slope.** Early in follow-up the two arms have barely diverged,
+  so you must treat a great many patients to prevent one event and the NNT is
+  large. As the survival gap widens the NNT drops: the same treatment buys more
+  per patient the longer you wait. Read the value at the time horizon that
+  matters for your decision, not at the visual endpoint.
+- **The confidence band.** A wide band, especially early when NNT is large and
+  unstable, means the count is poorly determined. If the band runs off to very
+  large values, the benefit at that time is essentially unmeasurable.
+- **The y-axis scale.** NNT is a ratio and blows up when the absolute benefit is
+  near zero. A capped axis (here 0 to 50) keeps the figure readable, but
+  remember the curve is heading to infinity at time zero, not flattening.
+
+## Variations
+
 ### Absolute risk reduction
 
 The same data plotted as ARR (%) by setting `estimate_col = "arr"` and the
-matching CI columns.
+matching CI columns. ARR is the reciprocal of NNT and rises over time as the
+benefit accumulates, which many readers find easier to take in than a falling
+count. Show whichever frames your benefit most honestly; show both if a reviewer
+asks.
 
 ```{r}
 #| label: nnt_arr
@@ -71,12 +108,13 @@ nnt_plot(
   theme_hv_poster()
 ```
 
-## Survival difference
+### Survival difference
 
 `survival_difference_plot()` plots the difference `S_2(t) - S_1(t)` between two
 groups over time with an optional confidence band.
 `sample_survival_difference_data()` generates the point-wise difference with
-bootstrap CI bounds from a hazard-ratio contrast.
+bootstrap CI bounds from a hazard-ratio contrast. Both arms are simulated at the
+same n to keep the band width realistic.
 
 ```{r}
 #| label: surv_diff_data
@@ -87,11 +125,11 @@ diff_dat <- sample_survival_difference_data(
 head(diff_dat)
 ```
 
-### Survival difference curve
-
-The dashed line at zero is the no-benefit baseline; a positive difference
-means the treatment group has higher survival. No grouping argument is needed
-for the two-group case.
+The dashed line at zero is the no-benefit baseline; a positive difference means
+the treatment group has higher survival. No grouping argument is needed for the
+two-group case. Read the figure two ways: the height of the curve is the size of
+the benefit at each time, and the moment the lower edge of the band clears zero
+is when the benefit becomes statistically convincing.
 
 ```{r}
 #| label: surv_diff_plot
@@ -113,7 +151,10 @@ survival_difference_plot(
 ### Multiple comparisons
 
 Combine several two-group differences into one long data frame and use
-`group_col` to overlay them.
+`group_col` to overlay them. This is how we put one reference arm against
+several alternatives in a single panel: each line is one contrast, and the ones
+that sit highest and clear zero earliest are the comparisons with the strongest
+benefit.
 
 ```{r}
 #| label: surv_diff_multi
@@ -140,3 +181,19 @@ survival_difference_plot(rbind(d1, d2, d3), group_col = "comparison") +
   labs(x = "Years", y = "Survival Difference (%)") +
   theme_hv_poster()
 ```
+
+## Pitfalls
+
+- **Quoting NNT at time zero.** NNT is a reciprocal, so it explodes near the
+  start of follow-up where the arms have not yet diverged. Always report it at a
+  named horizon, never as a single headline number with no time attached.
+- **Mismatched CI columns.** NNT and ARR each have their own pair of bounds.
+  Plot ARR with the NNT bounds and the band will be wrong. Name the CI columns
+  that go with the estimate you are showing.
+- **Reading the survival difference where the band straddles zero.** A positive
+  point estimate whose confidence band still includes zero is not yet a
+  demonstrated benefit. The figure is most honest when you let the band do the
+  arguing.
+- **Forgetting the zero line.** The dashed reference at zero is what makes the
+  survival-difference figure readable. Add the `geom_hline()` every time; without
+  it the eye has no anchor for "no benefit".
