@@ -1,7 +1,144 @@
-# Annotating figures and formating axis
-
-See @knuth84 for additional discussion of literate programming.
+# Annotating figures and formatting axes
 
 ```{r}
-1 + 1
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
 ```
+
+Every hvtiPlotR plot renders as a bare `ggplot` object: no labels, annotations,
+or cropping are applied by the constructor. You add those by chaining `+`
+layers. This chapter covers axis/title text (`labs()`), in-panel annotations
+(`annotate()`), viewport cropping (`coord_cartesian()`), and draft footnotes
+(`make_footnote()`).
+
+We build one base KM plot and decorate it throughout.
+
+```{r}
+#| label: base
+dta_km <- sample_survival_data(n = 500, seed = 42)
+km     <- hv_survival(dta_km)
+```
+
+## Labels with `labs()`
+
+`labs()` sets axis labels, title, subtitle, legend title, and caption. Set them
+on the rendered plot so they can be overridden per project.
+
+```{r}
+#| label: labs
+plot(km) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(
+    title   = "Overall Survival",
+    x       = "Years after Operation",
+    y       = "Freedom from Death (%)",
+    caption = "Logit CI, α = 0.6827 (1 SD)"
+  ) +
+  theme_hv_poster()
+```
+
+## Annotations with `annotate()`
+
+`annotate()` places text, segments, or arrows at fixed data coordinates —
+a sample-size callout in a corner, or an arrow pointing to an event.
+
+```{r}
+#| label: annotate
+plot(km) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Freedom from Death (%)") +
+  annotate("text",    x = 1,  y = 5,
+           label = paste0("n = ", nrow(dta_km)),
+           hjust = 0, size = 3.5) +
+  annotate("segment", x = 10, xend = 10, y = 30, yend = 50,
+           arrow = arrow(length = unit(0.2, "cm")), colour = "grey40") +
+  annotate("text",    x = 10.3, y = 40,
+           label = "Median survival", hjust = 0, size = 3, colour = "grey40") +
+  theme_hv_poster()
+```
+
+## Cropping with `coord_cartesian()`
+
+`coord_cartesian()` crops the viewport without dropping data, so any fit
+computed on the full range is preserved.
+
+```{r}
+#| label: coord
+dta_trends <- sample_trends_data(n = 600, seed = 42)
+p_base     <- plot(hv_trends(dta_trends))
+
+p_base +
+  scale_colour_brewer(palette = "Set1", name = "Group") +
+  scale_shape_manual(
+    values = c("Group I" = 15, "Group II" = 19,
+               "Group III" = 17, "Group IV" = 18),
+    name = "Group"
+  ) +
+  labs(x = "Surgery Year", y = "Outcome") +
+  coord_cartesian(xlim = c(1995, 2020), ylim = c(20, 70)) +
+  theme_hv_poster()
+```
+
+## Draft footnotes with `make_footnote()`
+
+`make_footnote()` stamps the **bottom-right corner** of the current graphics
+device using grid — call it *after* `print()`ing a plot to flag a
+work-in-progress figure. The ggplot object itself is untouched, so the final
+`ggsave()` output is clean.
+
+```
+# During analysis                   # For publication
+print(p)                             ggsave("fig1.pdf", p, ...)
+make_footnote("R/analysis.R")        # <- no footnote call
+```
+
+Build any figure, then `print()` it and call `make_footnote()` with the source
+path. The default stamp appends a timestamp.
+
+```{r}
+#| label: footnote_draft
+#| fig-width: 7
+#| fig-height: 5
+p_draft <- plot(km) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Survival (%)") +
+  theme_hv_poster()
+
+print(p_draft)
+make_footnote("annotation.qmd")
+```
+
+Pass any string as `text` and set `timestamp = FALSE` for a stable analyst tag.
+
+```{r}
+#| label: footnote_analyst
+#| fig-width: 7
+#| fig-height: 5
+print(p_draft)
+make_footnote(
+  text      = paste("J. Ehrlinger |", Sys.Date()),
+  timestamp = FALSE,
+  prefix    = ""
+)
+```
+
+For publication, write the ggplot object directly with `ggsave()` and simply
+omit the `make_footnote()` call — the saved file carries no stamp.
