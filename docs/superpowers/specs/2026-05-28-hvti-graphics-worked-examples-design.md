@@ -20,7 +20,7 @@ deliverable exists.
 | Package | Role | Plot surface |
 |---|---|---|
 | `hvtiPlotR` (2.3.1) | clinical/descriptive ggplot helpers | `hv_*` constructor → `plot()` families |
-| `ggRandomForests` (2.7.3.9014) | ggplot2 visualization of random forests | `gg_*` + `autoplot`/`plot` methods |
+| `ggRandomForests` (2.7.3.9014 dev → v3.0.0) | ggplot2 visualization of random forests | `gg_*` + `autoplot`/`plot` methods |
 | `randomForestSRC` (3.6.2) | RF fitting engine + example datasets | `rfsrc()`; datasets veteran, pbc, breast, wine, housing |
 | `varPro` (3.1.0) | variable priority / selection | visualized via ggRandomForests `gg_varpro`, `gg_beta_varpro`, `gg_ivarpro`, `gg_isopro`, `gg_partial_varpro` |
 | `TemporalHazard` (1.0.3) | complete R survival/hazard modeling package | `hazard()`/`predict()` → ggplot; `hzr_kaplan`, `hzr_nelson`, `hzr_competing_risks`, `hzr_calibrate`, `hzr_gof` |
@@ -29,6 +29,10 @@ deliverable exists.
 `TemporalHazard` is a self-contained R package; the original `hazard` C library
 is not required for this book. A gap analysis against the SAS `hazard` package
 is explicitly **future work**, out of scope here.
+
+`ggRandomForests` is on the `2.7.3.90xx` dev line heading to a **v3.0.0 CRAN
+release**. The book targets the v3.0.0 API; if examples are written against the
+installed dev build, re-verify them against v3.0.0 once it lands.
 
 Package provenance:
 
