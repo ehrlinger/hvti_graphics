@@ -10,15 +10,37 @@ library(ggplot2)
 library(hvtiPlotR)
 ```
 
-Variable importance ranks predictors but says nothing about the *shape* of
-their effect. Two complementary plots fill that gap:
+## When to use it
+
+Variable importance (the previous chapter) ranks predictors but says nothing
+about *how* a predictor moves the prediction. Once VIMP tells you bilirubin
+matters, the next question is the shape of that effect: does predicted survival
+fall steadily as bilirubin climbs, drop off a cliff past some threshold, or
+level out at the high end? Dependence plots answer that. Reach for them whenever
+you have a forest that predicts well and you need to describe what a specific
+variable is doing, for a results figure, a clinical discussion, or your own
+understanding of the model.
+
+Two plots fill the gap, and the difference between them is the whole point of
+this chapter:
 
 - **Variable dependence** shows the forest's predicted value for every
-  observation against an actual predictor value -- the raw, marginal picture.
-- **Partial dependence** averages out all other predictors, isolating the
-  effect of one variable on the prediction -- a smoother, model-level summary.
+  observation against that observation's actual predictor value. It is the raw,
+  marginal picture, one point per patient, scatter and all.
+- **Partial dependence** averages out every other predictor to isolate the
+  effect of one variable. It is a smoother, model-level summary, the same trend
+  with the confounding from other variables removed.
 
-We reuse the `pbc` survival forest from the previous chapter.
+Both come from ggRandomForests [@R-ggRandomForests]: `gg_variable()` for the
+first, `gg_partial_rfsrc()` for the second. Each hands back a bare ggplot you
+finish with a house theme.
+
+## The data it needs
+
+Like VIMP, dependence plots read from a fitted `rfsrc` object, not a raw data
+frame. We reuse the `pbc` survival forest from the previous chapter, fit on the
+primary biliary cirrhosis cohort: one row per patient, a follow-up time, an
+event indicator, and a panel of liver labs.
 
 ```{r}
 #| label: rf-fit
@@ -27,8 +49,10 @@ rf <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100,
             importance = TRUE)
 ```
 
-For survival forests we evaluate dependence at a fixed follow-up time. The
-median follow-up is a natural choice.
+For a survival forest there is one extra ingredient: a follow-up time at which
+to read the prediction. Survival probability is not a single number, it is a
+curve over time, so dependence is always evaluated at a chosen horizon. The
+median follow-up is a natural default.
 
 ```{r}
 #| label: tval
@@ -36,12 +60,14 @@ t_eval <- median(pbc$days)
 t_eval
 ```
 
-## Variable dependence
+## Build it
 
-`gg_variable()`, from ggRandomForests [@R-ggRandomForests], returns one predicted survival probability per observation. For
-a survival forest the `plot()` method needs a `time` to evaluate, and an `xvar`
-selection. Setting `panel = TRUE` lays the chosen predictors out side by side;
-each point is one patient and the blue curve is a loess smooth.
+`gg_variable()` returns one predicted survival probability per observation. For
+a survival forest the `plot()` method needs both a `time` to evaluate at and an
+`xvar` selection naming which predictors to draw; without a time point it has
+nothing to put on the y-axis. Setting `panel = TRUE` lays the chosen predictors
+out side by side. Each point is one patient and the blue curve is a loess smooth
+through the cloud.
 
 ```{r}
 #| label: gg-variable
@@ -53,21 +79,37 @@ plot(gg_v, xvar = c("bili", "age", "albumin"), time = t_eval,
 ```
 
 Reading the smooths: predicted survival at `r t_eval` days falls steeply as
-serum bilirubin rises, and declines with age, while higher albumin tracks with
-better survival. These are the marginal trends actually present in the data --
-including the scatter, which warns you how much spread underlies each trend.
+serum bilirubin rises, declines gently with age, and tracks upward with higher
+albumin. These are the marginal trends actually present in the data, scatter
+included, and that scatter is information: it warns you how much patient-to-patient
+spread underlies each trend.
 
-## Partial dependence
+## Read it
 
-Variable-dependence scatter is confounded by every other predictor. Partial
-dependence removes that confounding: for a grid of `bili` values the forest
-predicts each patient as if they had that value, then averages. The result is
-the marginal effect of `bili` with everything else held at its observed
-distribution.
+The two plots answer different questions, and reading them well means keeping
+the difference straight.
 
-`gg_partial_rfsrc()` drives `randomForestSRC`'s partial-prediction machinery
-directly. It is the slow step -- we restrict it to a single variable at the
-median time and a modest evaluation grid (`n_eval`) to keep the render fast.
+- **Variable dependence shows the raw trend, confounding and all.** The
+  bilirubin panel above mixes bilirubin's own effect with the fact that
+  high-bilirubin patients also tend to differ in age, albumin, and the rest. The
+  scatter tells you how tight the relationship is once you account for that
+  spread.
+- **Partial dependence shows the adjusted trend.** The plot below holds the
+  other predictors at their observed distribution and varies bilirubin alone, so
+  the curve is bilirubin's marginal effect with the other variables averaged out.
+  When the two plots disagree, the gap is the confounding.
+- **The shape is the message.** Look for whether the curve is monotone (steady
+  in one direction), thresholded (flat then steep, or steep then flat), or
+  genuinely flat (the variable has little marginal pull at this time point even
+  if VIMP ranked it). Report the time you read it at, because a different horizon
+  can give a different shape.
+
+To see partial dependence, `gg_partial_rfsrc()` drives randomForestSRC's
+partial-prediction machinery directly. For a grid of `bili` values it predicts
+every patient as if they had that value, then averages, giving the marginal
+effect of `bili` with everything else held at its observed distribution. This is
+the slow step, so we restrict it to a single variable at the median time and a
+modest evaluation grid (`n_eval`) to keep the render quick.
 
 ```{r}
 #| label: gg-partial
@@ -76,17 +118,40 @@ gg_p <- gg_partial_rfsrc(rf, xvar.names = "bili",
 plot(gg_p) + theme_hv_manuscript()
 ```
 
-The partial-dependence curve is the *adjusted* version of the bilirubin panel
-above: the same downward trend, but now free of the influence of age, albumin
+The partial-dependence curve is the adjusted version of the bilirubin panel
+above: the same downward trend, but now free of the influence of age, albumin,
 and the rest. The flat scatter has collapsed into a single, interpretable
-dose-response line -- the cleanest summary of how bilirubin moves predicted
+dose-response line, the cleanest summary of how bilirubin moves predicted
 survival.
 
-## Practical notes
+## Variations
 
-- **Pick a time.** Survival dependence is always read at a follow-up time;
-  changing `time`/`partial.time` can change the shape, so report which you used.
-- **Cost.** Partial dependence refits predictions across the grid. If it is too
-  slow, lower `n_eval`, restrict to one variable, or reduce `ntree`.
-- **Order of operations.** Use VIMP to choose *which* variables to inspect here;
-  there is no point profiling a variable the forest ignores.
+### A different follow-up time
+
+Because survival dependence is read at a horizon, the natural variation is to
+read it at another one. Swap `t_eval` for an early landmark and the same
+variable can show a flatter or steeper effect, since the predictors that drive
+early events are not always the ones that drive late ones. Whenever you change
+the time, change the caption too.
+
+### Lowering the cost of partial dependence
+
+Partial dependence refits predictions across the whole grid, so it scales with
+`n_eval`, the number of variables, and `ntree`. If a figure is too slow, lower
+`n_eval` first (a coarser grid still shows the shape), then restrict to the one
+or two variables you actually need to discuss, and only then reduce `ntree`.
+
+## Pitfalls
+
+- **Survival dependence needs a time and an `xvar`.** On a survival forest,
+  `gg_variable()` has nothing to plot until you tell `plot()` which time point to
+  evaluate and (with `panel = TRUE`) which predictors to draw. Omit the time and
+  the call fails to produce a figure, because predicted survival is undefined
+  without a horizon.
+- **Pick the time deliberately and report it.** Changing `time` or
+  `partial.time` can change the shape of the curve. Choose a clinically
+  meaningful horizon, state it, and do not quietly compare a figure read at the
+  median with one read at five years.
+- **Order of operations.** Use VIMP to choose *which* variables to profile here.
+  There is no point spending a slow partial-dependence run on a variable the
+  forest already told you it ignores.
