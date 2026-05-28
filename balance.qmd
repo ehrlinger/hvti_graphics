@@ -1,1 +1,250 @@
 # Covariate balance and follow-up
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
+## Covariate balance plots
+
+The covariate balance plot is the standard quality-control figure for
+propensity-score matching and IPTW analyses. Each covariate occupies a labelled
+row; points show the standardized mean difference (SMD) for each comparison
+group. A solid vertical line marks zero balance; dotted lines at ±10% give a
+quick visual threshold for acceptable balance. `hv_balance()` prepares the
+data; `plot()` hands you a bare ggplot to style with `+`.
+
+Input must be in **long format**: one row per covariate × group combination
+with columns for the covariate name, the group label, and the numeric SMD.
+
+### Sample data
+
+`sample_covariate_balance_data()` returns 12 covariates in the long format
+`hv_balance()` expects (`variable`, `group`, `std_diff`). Build the S3 object
+once and reuse it across the styled variants below.
+
+```{r}
+#| label: cov_balance_data
+dta_cb <- sample_covariate_balance_data(n_vars = 12)
+head(dta_cb)
+
+# Build the S3 object once; reuse for all plot variants below
+cb <- hv_balance(dta_cb)
+```
+
+### Bare plot
+
+The bare panel lays out one covariate per row with points at their SMD values,
+but no colour, shape, axis limits, or theme yet.
+
+```{r}
+#| label: cov_balance_bare
+plot(cb, alpha = 0.8)
+```
+
+### Adding colour, shape, and axis scales
+
+Map `"Before match"` to red triangles and `"After match"` to blue squares. Set
+the x-axis limits wide enough to include your largest pre-match SMD; symmetric
+breaks make the ±10% threshold visually obvious.
+
+```{r}
+#| label: cov_balance_scales
+plot(cb, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Before match" = "red4", "After match" = "blue3"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("Before match" = 17L, "After match" = 15L),
+    name   = NULL
+  ) +
+  scale_x_continuous(
+    limits = c(-45, 35),
+    breaks = seq(-40, 30, 10)
+  ) +
+  labs(x = "Standardized difference (%)", y = "") +
+  theme(legend.position = c(0.20, 0.95))
+```
+
+### Adding directional annotations and theme
+
+`annotate()` places explanatory text on the panel to indicate which direction
+of imbalance favours each group, using inside-panel coordinates and
+`theme_hv_poster()`.
+
+```{r}
+#| label: cov_balance_annotated
+n_vars <- length(unique(dta_cb$variable))
+
+cb_final <- plot(cb, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Before match" = "red4", "After match" = "blue3"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("Before match" = 17L, "After match" = 15L),
+    name   = NULL
+  ) +
+  scale_x_continuous(
+    limits = c(-40, 30),
+    breaks = seq(-40, 30, 10)
+  ) +
+  labs(x = "Standardized difference: SAVR - TF:TAVR (%)", y = "") +
+  annotate("text", x = -30, y = 0,      label = "More likely TF-TAVR", size = 4.5) +
+  annotate("text", x =  22, y = n_vars, label = "More likely SAVR",    size = 4.5) +
+  theme(legend.position = c(0.20, 0.935)) +
+  theme_hv_poster()
+
+cb_final
+```
+
+### Controlling covariate order
+
+Pass `var_levels` to the constructor to control the bottom-to-top display order
+of covariates. The example below reverses the default order.
+
+```{r}
+#| label: cov_balance_order
+cb_ord <- hv_balance(dta_cb, var_levels = rev(unique(dta_cb$variable)))
+
+plot(cb_ord, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Before match" = "red4", "After match" = "blue3"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("Before match" = 17L, "After match" = 15L),
+    name   = NULL
+  ) +
+  labs(x = "Standardized difference (%)", y = "") +
+  theme_hv_poster()
+```
+
+## Goodness-of-follow-up plots
+
+The goodness-of-follow-up plot is a standard quality-control figure in
+longitudinal outcome analyses. Each patient appears as a point at their
+operation date (x-axis) and follow-up duration (y-axis), with a short vertical
+tick below. A dashed diagonal marks the maximum potential follow-up given the
+study start, study end, and follow-up closing date — points above the line have
+longer follow-up than that window alone explains.
+
+`hv_followup()` prepares the data; `plot()` hands you a bare ggplot. The `type`
+argument selects the panel: `"followup"` (default, death/censoring scatter) or
+`"event"` (competing non-fatal event panel).
+
+### Sample data
+
+`sample_goodness_followup_data()` generates 300 patients with operation dates,
+follow-up durations, vital status, and a simulated non-fatal event column. The
+constructor needs `study_start`, `study_end`, and `close_date` to draw the
+maximum-follow-up diagonal correctly.
+
+```{r}
+#| label: gfup_data
+gfup_dta <- sample_goodness_followup_data(n = 300, seed = 42)
+head(gfup_dta)
+```
+
+### Death follow-up plot
+
+The bare `plot(gf)` panel shows each patient as a point and tick without
+scales, labels, or theme.
+
+```{r}
+#| label: gfup_basic
+gf <- hv_followup(
+  data        = gfup_dta,
+  origin_year = 1990,
+  study_start = as.Date("1990-01-01"),
+  study_end   = as.Date("2019-12-31"),
+  close_date  = as.Date("2021-08-06")
+)
+
+# Bare plot — no scales or labels yet
+plot(gf)
+```
+
+Scale, label, and annotation layers compose with `+`. `scale_color_manual()`
+and `scale_shape_manual()` map the binary alive/dead state; `annotate()` places
+group-identifying text on the panel; `theme_hv_manuscript()` finishes it.
+
+```{r}
+#| label: gfup_styled
+gfup_final <- plot(gf, alpha = 0.8) +
+  scale_color_manual(
+    values   = c("#377EB8", "#E41A1C"),
+    labels   = c("Alive", "Dead"),
+    na.value = "black",
+    drop     = FALSE
+  ) +
+  scale_shape_manual(
+    values = c(1, 4),
+    labels = c("Alive", "Dead")
+  ) +
+  scale_x_continuous(breaks = seq(1990, 2020, 3)) +
+  scale_y_continuous(breaks = seq(0, 33, 3)) +
+  coord_cartesian(ylim = c(0, 33), xlim = c(1990, 2020)) +
+  labs(
+    x     = "Operation Date",
+    y     = "Follow-up (years)",
+    color = "Status",
+    shape = "Status"
+  ) +
+  annotate("text", x = 1993, y = 31, label = "Alive at close",
+           hjust = 0, size = 3.5) +
+  annotate("text", x = 1993, y = 28, label = "Deceased",
+           hjust = 0, size = 3.5, color = "#E41A1C") +
+  theme(legend.position = "none") +
+  theme_hv_manuscript()
+
+gfup_final
+```
+
+### Non-fatal event panel
+
+When the dataset includes a non-fatal competing event (e.g. relapse,
+reoperation), pass `event_col`, `event_time_col`, and optionally
+`death_for_event_col` to the constructor, then call `plot()` with
+`type = "event"`.
+
+```{r}
+#| label: gfup_event_panel
+gf2 <- hv_followup(
+  gfup_dta,
+  event_col           = "ev_event",
+  event_time_col      = "iv_event",
+  death_for_event_col = "deads",
+  event_levels        = c("No event", "Relapse", "Death"),
+  origin_year         = 1990,
+  study_start         = as.Date("1990-01-01"),
+  study_end           = as.Date("2019-12-31"),
+  close_date          = as.Date("2021-08-06")
+)
+
+plot(gf2, type = "event", alpha = 0.8) +
+  scale_color_manual(
+    values = c("No event" = "blue", "Relapse" = "green3", "Death" = "red"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("No event" = 1L, "Relapse" = 2L, "Death" = 4L),
+    name   = NULL
+  ) +
+  scale_x_continuous(breaks = seq(1990, 2020, 3)) +
+  scale_y_continuous(breaks = seq(0, 33, 3)) +
+  coord_cartesian(ylim = c(0, 33), xlim = c(1990, 2020)) +
+  labs(
+    x = "Operation Date",
+    y = "Follow-up (years)",
+    color = "Event", shape = "Event"
+  ) +
+  annotate("text", x = 1993, y = 31,
+           label = "Systematic follow-up", hjust = 0, size = 3.5) +
+  theme(legend.position = c(0.85, 0.15)) +
+  theme_hv_manuscript()
+```
