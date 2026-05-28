@@ -1,9 +1,165 @@
 # Spaghetti Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+## Spaghetti / profile plot
+
+`hv_spaghetti()` draws one trajectory line per subject over time, with optional
+stratification by a grouping variable. `plot()` accepts `add_smooth = TRUE` for
+an optional LOESS overlay and returns a bare ggplot. `sample_spaghetti_data()`
+generates 150 patients with up to 6 observations each, stratified by a named
+proportion vector.
 
 ```{r}
-1 + 1
+#| label: spaghetti_data
+dta_sp <- sample_spaghetti_data(
+  n_patients = 150,
+  max_obs    = 6,
+  groups     = c(Female = 0.45, Male = 0.55),
+  seed       = 42L
+)
+head(dta_sp)
+
+# Build S3 objects for reuse below
+sp     <- hv_spaghetti(dta_sp)
+sp_col <- hv_spaghetti(dta_sp, colour_col = "group")
+```
+
+### Bare plot
+
+The bare `plot(sp)` panel draws one thin trajectory per patient over time with
+no colour, axis limits, or theme.
+
+```{r}
+#| label: spaghetti_bare
+p_sp <- plot(sp)
+p_sp
+```
+
+### Unstratified
+
+Set axis limits and breaks with the usual scale layers, then add a theme.
+
+```{r}
+#| label: spaghetti_unstrat_full
+plot(sp) +
+  scale_x_continuous(breaks = seq(0, 5, 1)) +
+  scale_y_continuous(breaks = seq(0, 80, 20)) +
+  coord_cartesian(xlim = c(0, 5), ylim = c(0, 80)) +
+  labs(x = "Years", y = "AV Mean Gradient (mmHg)") +
+  theme_hv_manuscript()
+```
+
+### Stratified by group
+
+Build the object with `colour_col = "group"` so each subject's line is coloured
+by its stratum, then assign colours with `scale_colour_manual()`.
+
+```{r}
+#| label: spaghetti_sex_strat
+plot(sp_col) +
+  scale_colour_manual(
+    values = c(Female = "firebrick", Male = "steelblue"),
+    name   = NULL
+  ) +
+  scale_x_continuous(breaks = seq(0, 5, 1)) +
+  scale_y_continuous(breaks = seq(0, 80, 20)) +
+  coord_cartesian(xlim = c(0, 5), ylim = c(0, 80)) +
+  labs(x = "Years", y = "AV Mean Gradient (mmHg)") +
+  theme_hv_manuscript()
+```
+
+### With LOESS smooth overlay
+
+Pass `add_smooth = TRUE` to `plot()` to add a LOESS trend line per group over
+the individual trajectories.
+
+```{r}
+#| label: spaghetti_smooth
+plot(sp_col, add_smooth = TRUE) +
+  scale_colour_manual(
+    values = c(Female = "firebrick", Male = "steelblue"),
+    name   = NULL
+  ) +
+  scale_x_continuous(breaks = seq(0, 5, 1)) +
+  scale_y_continuous(breaks = seq(0, 80, 20)) +
+  coord_cartesian(xlim = c(0, 5), ylim = c(0, 80)) +
+  labs(x = "Years", y = "AV Mean Gradient (mmHg)") +
+  theme_hv_manuscript()
+```
+
+## Temporal trend plot
+
+`hv_trends()` accepts patient-level data and computes annual summaries (mean or
+median) internally. `plot()` returns a bare ggplot; add scales, labels, and a
+theme. `sample_trends_data()` generates patient-level data that `hv_trends()`
+aggregates by year; the `year_range` and `groups` arguments mirror the study
+period and group structure.
+
+```{r}
+#| label: trends_data
+dta_tr <- sample_trends_data(
+  n          = 600,
+  year_range = c(1968L, 2000L),
+  groups     = c("Group I", "Group II", "Group III", "Group IV")
+)
+head(dta_tr)
+```
+
+### Single variable: cases/year
+
+Subset to a single group and fit with `group_col = NULL` for a single annual
+series, then set axis limits and breaks to match the study window.
+
+```{r}
+#| label: trends_n_year
+one_grp <- dta_tr[dta_tr$group == "Group I", ]
+tr1 <- hv_trends(one_grp, group_col = NULL)
+
+plot(tr1) +
+  scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
+  scale_y_continuous(limits = c(0, 10),      breaks = seq(0, 10, 2)) +
+  labs(x = "Year", y = "Cases/year") +
+  theme_hv_manuscript()
+```
+
+### Multiple groups
+
+When `group_col` is set, the constructor computes per-group annual means and
+`plot()` draws one line per group. `scale_colour_brewer()` and
+`scale_shape_manual()` give each group a distinct colour and marker, keeping
+the figure readable in greyscale.
+
+```{r}
+#| label: trends_multi_brewer
+tr <- hv_trends(dta_tr)
+plot(tr) +
+  scale_colour_brewer(palette = "Set1", name = "Group") +
+  scale_shape_manual(
+    values = c("Group I" = 15L, "Group II" = 19L,
+               "Group III" = 17L, "Group IV" = 18L),
+    name = "Group"
+  ) +
+  scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
+  labs(x = "Year", y = "Outcome (%)") +
+  theme_hv_manuscript()
+```
+
+### With confidence ribbon
+
+Pass `se = TRUE` to `plot()` to add a `geom_ribbon()` around the mean line; the
+`alpha` argument controls ribbon opacity.
+
+```{r}
+#| label: trends_ribbon
+plot(tr1, se = TRUE, alpha = 0.2) +
+  scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
+  labs(x = "Year", y = "Cases/year") +
+  theme_hv_manuscript()
 ```
