@@ -1,9 +1,11 @@
 {
-  "hash": "dfbd29eb50dcdbb9e7f8cae1344ddc76",
+  "hash": "2a0bfefdd86848483bfbe9257a537d50",
   "result": {
     "engine": "knitr",
-    "markdown": "# Packages\n\n\n::: {.cell}\n\n```{.r .cell-code}\n1 + 1\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2\n```\n\n\n:::\n:::\n\n",
-    "supporting": [],
+    "markdown": "# Packages\n\nA short stack does most of the work in this book. `ggplot2` is the foundation;\neverything else either builds figures on top of it or supplies the modeling\noutput we plot.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(ggplot2)\nlibrary(hvtiPlotR)        # house plots, themes, and PPT/PDF export\nlibrary(hvtiRutilities)   # data dictionaries, labels, manifests\nlibrary(gt)               # publication tables\nlibrary(patchwork)        # compose multi-panel figures\n```\n:::\n\n\nWhat each one is for:\n\n- **hvtiPlotR** -- the core of the book. It wraps the figures we publish into a\n  two-step API: an `hv_*()` constructor validates the data and returns an object,\n  and `plot()` turns that object into a bare ggplot. It also carries the house\n  themes (`theme_hv_manuscript()`, `theme_hv_poster()`, the PowerPoint themes)\n  and the save helpers.\n- **hvtiRutilities** -- the data-governance side: data dictionaries, variable\n  labels, dataset manifests, and the synthetic-data generators we use so the\n  examples run without touching real patient data.\n- **ggRandomForests**, **randomForestSRC**, **varPro** -- the random-forest\n  stack. `randomForestSRC` fits the forest, `varPro` does variable selection, and\n  `ggRandomForests` turns either one into a ggplot. These load in the random\n  forest chapters where they are used.\n- **TemporalHazard** -- our R port of the SAS/C HAZARD module, for parametric and\n  nonparametric hazard modeling. It loads in its own chapter.\n- **gt** -- publication-quality tables. We use it directly for now; a companion\n  `hvtiRtables` package is planned to give tables the same house treatment the\n  plots get.\n- **patchwork** -- composes several plots into one figure with shared labels and\n  panel tags.\n\nYou do not need all of these for any single figure. Each chapter loads what it\nuses in its first chunk.\n",
+    "supporting": [
+      "packages_files"
+    ],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

@@ -1,5 +1,27 @@
 # Preface {.unnumbered}
 
-This is a Quarto book. <https://quarto.org/docs/books>.
+Every figure in a CORR manuscript or presentation has been made before. The
+Kaplan-Meier curve with numbers at risk, the propensity-balance plot, the
+spaghetti plot of repeated echo measurements, the CONSORT diagram that opens the
+paper -- we draw the same handful of figures over and over. This book collects
+them in one place, each with the code that produces it, so the next person who
+needs one starts from a working recipe instead of a blank script.
 
-The books is comprised of chapters collected into "parts" for easy editing and navigation. Each chapter is created from a single `.qmd` file. 
+The recipes are built on the `hvti*` packages we maintain for this work, with
+`ggplot2` underneath and a few specialist packages where they earn their place.
+Where a package gives you a helper, we use it. Where it does not -- a plain
+density plot, a box plot -- we fall back to bare `ggplot2` and style it to
+match, so the figures look like they belong together regardless of how they were
+drawn.
+
+Two ideas run through the whole book. First, a figure is built in two steps: a
+constructor prepares and validates the data, then `plot()` hands you a bare
+ggplot you finish with the usual `+`. Second, every example stands on its own.
+It generates its own sample data, so you can copy a chunk, run it, and see the
+figure before you point it at your own analysis. The aim is the one we hold for
+all of this team's tooling: make the right path the easy path.
+
+The chapters are grouped into parts. *Getting Started* covers the packages and
+conventions. *Figure types* is the catalog, one chapter per plot. A part on
+*random forests* covers model visualization, and the last parts handle tables,
+formatting, and getting a finished figure out the door.

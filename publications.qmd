@@ -1,9 +1,14 @@
 # Publication themes {.unnumbered}
 
-This is a book created from markdown and executable code.
+A figure is not done when it looks right on your screen. It has to land in a
+journal at the right size, on a poster legible from across a hall, or on a slide
+that reads from the back of the room. Each medium has its own demands -- panel
+dimensions, text size, file format -- and the same plot needs a different finish
+for each.
 
-See @knuth84 for additional discussion of literate programming.
-
-```{r}
-1 + 1
-```
+This part covers getting a figure out the door. The manuscript chapter handles
+fixed-panel sizing and PDF export for submission, plus editable PowerPoint output
+when a figure needs to keep changing. The research-day chapter handles poster
+sizing, where the base text has to be large enough to read at a distance. The
+house themes do most of the work; these chapters show how to pair them with the
+right save settings so the figure arrives the way you drew it.

@@ -1,8 +1,39 @@
 # Using R for figures
 
-See @knuth84 for additional discussion of literate programming.
+If you have written any `ggplot2`, the hvtiPlotR figures will feel familiar --
+you are still building a plot in layers with `+`. The difference is where you
+start. Rather than mapping raw columns to a geom yourself, you hand the data to a
+constructor that knows what the figure needs, and it returns a plot you finish.
 
-```{r}
-1 + 1
+## The two-step pattern
+
+Every hvtiPlotR figure is built the same way:
+
+```r
+# 1. Construct: validate the data and compute what the figure needs.
+obj <- hv_survival(data, time_col = "time", event_col = "status")
+
+# 2. Plot: get a bare ggplot, then decorate it with the usual + operator.
+plot(obj) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(x = "Years", y = "Survival") +
+  theme_hv_manuscript()
 ```
 
+The constructor (`hv_*()`) does the analysis -- fitting the survival curve,
+computing standardized differences, aggregating annual counts. `plot()` returns
+a ggplot with the data drawn but nothing styled: no colour scale, no axis
+labels, no theme. That split is deliberate. The figure's content is decided once,
+in the constructor, and how it looks is decided later, with layers you can swap
+without touching the analysis. The same object becomes a manuscript figure or a
+poster panel by changing only the theme.
+
+## Reproducible by default
+
+Every example in this book makes its own data with a `sample_*()` generator (from
+hvtiPlotR or hvtiRutilities) and a fixed seed. Nothing reads a file, and no
+patient data appears anywhere. That means you can run any chunk as written, see
+the figure, and then swap in your own data once you trust the recipe. When you do
+move to real data, the *Data governance* chapter covers labelling it and pinning
+the exact extract with a manifest, so a figure can always be traced back to the
+data that produced it.
