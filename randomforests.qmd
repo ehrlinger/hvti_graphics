@@ -1,1 +1,61 @@
 # Random forests: fit then visualize
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(randomForestSRC)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+Random forest analysis in this book follows a consistent two-step workflow.
+
+1. **Fit** a forest with `randomForestSRC::rfsrc()`. This is the modeling
+   engine: it grows the trees, computes out-of-bag (OOB) predictions, and
+   (optionally) variable importance.
+2. **Visualize** the fitted object with a `ggRandomForests` `gg_*()`
+   *constructor*. Each constructor extracts a tidy slice of the forest --
+   error rates, predicted survival, variable importance, partial dependence --
+   and returns a lightweight object with `plot()` and `autoplot()` methods that
+   produce `ggplot` graphics.
+
+Because every `gg_*()` plot is a standard `ggplot`, the house manuscript style
+is applied the same way as everywhere else in the book: add
+`+ theme_hv_manuscript()`.
+
+## A minimal end-to-end example
+
+The `veteran` lung-cancer trial data ships with `randomForestSRC`. We fit a
+survival forest and look at how the OOB error converges as trees are added.
+
+```{r}
+#| label: rf-minimal
+data(veteran, package = "randomForestSRC")
+rf <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 100)
+plot(gg_error(rf)) + theme_hv_manuscript()
+```
+
+That is the whole pattern: `rfsrc()` once, then a `gg_*()` constructor wrapped
+in `plot()` and themed. The pattern is identical for the survival curves,
+importance, and dependence plots in the chapters that follow.
+
+::: callout-note
+## Tree count
+
+Every `rfsrc()` call in these chapters uses `ntree = 100` to keep render times
+short. For real analyses use the package default (`ntree = 500` or more) and
+confirm convergence with `gg_error()`.
+:::
+
+## What the following chapters cover
+
+| Chapter | Constructor | Shows |
+|---|---|---|
+| Error convergence | `gg_error()` | OOB error vs. number of trees |
+| Predicted survival | `gg_rfsrc()`, `gg_survival()` | per-observation and grouped survival |
+| Variable importance | `gg_vimp()` | VIMP ranking of predictors |
+| Variable dependence | `gg_variable()`, `gg_partial()` | marginal and partial effects |
+| ROC / Brier | `gg_roc()` | classification performance |
+| varPro | varPro constructors | rule-based variable selection |
