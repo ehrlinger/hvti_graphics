@@ -1,9 +1,62 @@
 # Scatter Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+`hv_eda()` plots a column against a reference axis. When `y_col` is continuous
+it returns a scatter plot with a LOESS smoother overlay; observations missing
+`y_col` are drawn as rug ticks on the x-axis. `plot()` on the `hv_eda` object
+returns a bare `ggplot` that you decorate with colour scales, labels, and
+`theme_hv_manuscript()` (or `theme_hv_poster()`).
+
+## Sample data
+
+`sample_eda_data()` returns a mixed-type cohort of 300 patients. Here we use
+the continuous `op_years` (x) and `ef` (ejection fraction, y) columns.
 
 ```{r}
-1 + 1
+#| label: eda_data
+dta_eda <- sample_eda_data(n = 300, seed = 42)
+head(dta_eda)
+```
+
+## Continuous scatter + LOESS
+
+Build the object with `x_col`/`y_col`, then decorate. The `y_label` argument
+sets the legend/title text in place of the raw column name.
+
+```{r}
+#| label: eda_continuous
+plot(hv_eda(dta_eda, x_col = "op_years", y_col = "ef",
+            y_label = "Ejection Fraction (%)")) +
+  scale_colour_manual(values = c("firebrick"), guide = "none") +
+  scale_x_continuous(breaks = seq(0, 15, 5)) +
+  scale_y_continuous(limits = c(20, 80), breaks = seq(20, 80, 20)) +
+  labs(x = "Years from First Surgery Year",
+       caption = "Tick marks on x-axis: observations with missing EF") +
+  theme_hv_poster()
+```
+
+## Tuning the LOESS smoother
+
+`plot.hv_eda()` exposes `smooth_method` and `smooth_span` to control the
+overlaid smoother. A smaller `smooth_span` follows local structure more
+closely; a larger span gives a flatter trend.
+
+```{r}
+#| label: eda_continuous_smooth
+plot(hv_eda(dta_eda, x_col = "op_years", y_col = "ef",
+            y_label = "Ejection Fraction (%)"),
+     smooth_method = "loess", smooth_span = 0.5) +
+  scale_colour_manual(values = c("steelblue"), guide = "none") +
+  scale_x_continuous(breaks = seq(0, 15, 5)) +
+  scale_y_continuous(limits = c(20, 80), breaks = seq(20, 80, 20)) +
+  labs(x = "Years from First Surgery Year",
+       y = "Ejection Fraction (%)") +
+  theme_hv_poster()
 ```
