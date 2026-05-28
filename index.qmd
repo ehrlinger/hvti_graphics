@@ -9,8 +9,8 @@ needs one starts from a working recipe instead of a blank script.
 
 The recipes are built on the `hvti*` packages we maintain for this work, with
 `ggplot2` underneath and a few specialist packages where they earn their place.
-Where a package gives you a helper, we use it. Where it does not -- a plain
-density plot, a box plot -- we fall back to bare `ggplot2` and style it to
+Where a package gives you a helper, we use it. Where it does not (a plain
+density plot, a box plot), we fall back to bare `ggplot2` and style it to
 match, so the figures look like they belong together regardless of how they were
 drawn.
 
