@@ -71,7 +71,7 @@ decorate(p_base) + theme_hv_manuscript()
 
 ## Poster
 
-Larger axis text and tick weights, panel grid removed — reads at arm's length
+Larger axis text and tick weights, panel grid removed: reads at arm's length
 on a foam board, and holds up on a projector.
 
 ```{r}
@@ -81,7 +81,7 @@ decorate(p_base) + theme_hv_poster()
 
 ## Light PowerPoint
 
-Dark text and lines for white or light-grey slide backgrounds — the Cleveland
+Dark text and lines for white or light-grey slide backgrounds: the Cleveland
 Clinic standard template and most default Office decks.
 
 ```{r}
@@ -112,7 +112,7 @@ passed directly through the theme's `...`, e.g.
 
 ### Axis text size
 
-Resize tick labels (`axis.text`) and axis titles (`axis.title`) independently —
+Resize tick labels (`axis.text`) and axis titles (`axis.title`) independently,
 useful when scaling a figure down for a two-column layout.
 
 ```{r}
@@ -181,7 +181,7 @@ plot(km) +
 
 ### Expanding plot margins
 
-Add breathing room around the panel — for a figure placed directly on a poster,
+Add breathing room around the panel, for a figure placed directly on a poster,
 or when labels clip a tight device edge. Arguments follow top / right / bottom /
 left order.
 

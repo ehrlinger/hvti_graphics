@@ -12,7 +12,7 @@ hvtiPlotR plots carry no colour scale by default. ggplot2's [@R-ggplot2]
 `scale_colour_*` controls
 line and point colours; `scale_fill_*` controls filled areas (ribbons, bars).
 Both take the same `name` (legend title) and `guide` (legend display)
-arguments — set them together so the two scales stay in sync.
+arguments. Set them together so the two scales stay in sync.
 
 ## When to use it
 
@@ -80,8 +80,8 @@ p_base +
 
 ## Suppressing legends
 
-Pass `guide = "none"` to any scale and that aesthetic drops out of the legend —
-do this when axis labels or an annotation already name the group, so a redundant
+Pass `guide = "none"` to any scale and that aesthetic drops out of the legend.
+Do this when axis labels or an annotation already name the group, so a redundant
 legend does not eat panel space.
 
 ```{r}

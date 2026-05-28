@@ -52,7 +52,7 @@ do.call(
 )
 ```
 
-The chunk is `eval: false` because it writes a binary PDF — the code is shown,
+The chunk is `eval: false` because it writes a binary PDF. The code is shown,
 not executed during the book build. `cairo_pdf` embeds the poster fonts so the
 enlarged type renders exactly as designed. Calling `hv_ggsave_dims()` with the
 same `width`/`height` for every figure on the poster keeps the data regions

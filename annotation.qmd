@@ -116,7 +116,7 @@ p_base +
 ## Draft footnotes with `make_footnote()`
 
 `make_footnote()` stamps the **bottom-right corner** of the current graphics
-device using grid — call it *after* `print()`ing a plot to flag a
+device using grid. Call it *after* `print()`ing a plot to flag a
 work-in-progress figure. The ggplot object itself is untouched, so the final
 `ggsave()` output is clean.
 
@@ -162,7 +162,7 @@ make_footnote(
 ```
 
 For publication, write the ggplot object directly with `ggsave()` and simply
-omit the `make_footnote()` call — the saved file carries no stamp.
+omit the `make_footnote()` call. The saved file carries no stamp.
 
 ## Pitfalls
 

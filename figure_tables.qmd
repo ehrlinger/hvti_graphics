@@ -101,8 +101,8 @@ lc$meta[c("x_col", "group_col", "count_col")]
 str(lc$data)
 ```
 
-We reshape the long counts into a wide table — one row per follow-up
-window, one column per series — and render it with `gt`. This is the
+We reshape the long counts into a wide table (one row per follow-up
+window, one column per series) and render it with `gt`. This is the
 tabular companion to the bar chart's table panel.
 
 ```{r}

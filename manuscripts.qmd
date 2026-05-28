@@ -34,7 +34,7 @@ p_ms
 The naive approach is `ggsave(width = 11, height = 8.5)` (US Letter landscape).
 That fixes the *file* dimensions but lets the panel float inside them.
 `hv_ggsave_dims()` inverts the problem: you specify the panel content area you
-want — the rectangular bounding box of the gtable cells tagged `panel` — and it
+want (the rectangular bounding box of the gtable cells tagged `panel`) and it
 returns the `width`/`height`/`units` such that `ggsave()` yields exactly that
 panel size, expanding the file to absorb axes, titles, and legend (the
 "chrome"). The result is a named list shaped to splat directly into `ggsave()`
@@ -56,8 +56,8 @@ do.call(
 
 `cairo_pdf` is the device of choice here: it embeds fonts and renders
 transparency and custom typefaces correctly, where the base `pdf` device can
-substitute fonts. The chunk is `eval: false` because it writes a binary file —
-the code is shown, not run during the book build.
+substitute fonts. The chunk is `eval: false` because it writes a binary file.
+The code is shown, not run during the book build.
 
 For multi-panel figure sets where the data region must be identical across
 several PDFs regardless of label length, call `hv_ggsave_dims()` with the same
@@ -68,7 +68,7 @@ lands at the same slide position in a deck.
 ## PowerPoint export
 
 `save_ppt()` writes the plot into a PowerPoint slide as **editable DrawingML
-vector graphics** via the `officer` and `rvg` packages — shapes, lines, and
+vector graphics** via the `officer` and `rvg` packages: shapes, lines, and
 text remain selectable in PowerPoint, so co-authors can re-label or recolor
 without round-tripping back to R. It appends a slide to a template `.pptx`
 rather than overwriting it.
@@ -91,7 +91,7 @@ save_ppt(
 ```
 
 This chunk is `eval: false` because it writes a `.pptx` file. To anchor the
-panel content area at identical slide coordinates across a multi-slide deck —
-useful when axis-label widths differ between plots — pass
+panel content area at identical slide coordinates across a multi-slide deck
+(useful when axis-label widths differ between plots), pass
 `panel_box = list(width, height, left, top)`; `save_ppt()` delegates to
 `hv_ph_location()` per slide.

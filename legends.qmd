@@ -87,7 +87,7 @@ p_base +
 
 `theme(legend.position = "none")` hides every legend in one shot.
 Alternatively, `guide = "none"` on each `scale_*()` call drops only that
-aesthetic's legend — handy when you want a colour legend but no shape legend.
+aesthetic's legend, handy when you want a colour legend but no shape legend.
 
 ```{r}
 #| label: none
