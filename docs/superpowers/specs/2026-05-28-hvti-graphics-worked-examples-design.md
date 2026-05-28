@@ -30,9 +30,13 @@ deliverable exists.
 is not required for this book. A gap analysis against the SAS `hazard` package
 is explicitly **future work**, out of scope here.
 
-Not currently installed (install from local source before rendering — see
-Risks): `TemporalHazard` (`~/Documents/GitHub/temporal_hazard`, package name
-`TemporalHazard`) and `hvtiRutilities` (`~/Documents/GitHub/hvtiRutilities`).
+Package provenance:
+
+- **CRAN** (already installed, no local source): `randomForestSRC`, `varPro`,
+  `ggRandomForests`, `hvtiPlotR`.
+- **Local source** (install before rendering — see Risks):
+  `TemporalHazard` (`~/Documents/GitHub/temporal_hazard`, package name
+  `TemporalHazard`) and `hvtiRutilities` (`~/Documents/GitHub/hvtiRutilities`).
 
 ## Source material
 
