@@ -1,9 +1,57 @@
 # Box Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+`hvtiPlotR` does not provide a dedicated box-plot helper, so this chapter builds
+box plots directly with ggplot2's `geom_boxplot()` and styles them with the house
+theme `theme_hv_manuscript()` so they stay visually consistent with the rest of
+the book.
+
+We use `hvtiPlotR::sample_eda_data()` and detect a numeric column and a
+categorical grouping column programmatically.
 
 ```{r}
-1 + 1
+#| label: data
+dat <- sample_eda_data()
+num <- names(dat)[vapply(dat, is.numeric, logical(1))][1]
+grp <- names(dat)[vapply(dat, function(x) is.factor(x) || is.character(x), logical(1))][1]
+c(numeric = num, group = grp)
+```
+
+## Grouped box plot
+
+```{r}
+#| label: box-grouped
+ggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +
+  geom_boxplot() +
+  labs(
+    title = "Numeric distribution by group",
+    x = grp,
+    y = num
+  ) +
+  theme_hv_manuscript()
+```
+
+## Box plot with jittered points
+
+Overlaying the raw observations with `geom_jitter()` shows the underlying sample
+size and spread that a box plot alone hides.
+
+```{r}
+#| label: box-jitter
+ggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.3, size = 0.7) +
+  labs(
+    title = "Box plot with jittered observations",
+    x = grp,
+    y = num
+  ) +
+  theme_hv_manuscript()
 ```

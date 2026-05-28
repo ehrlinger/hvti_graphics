@@ -1,9 +1,58 @@
 # Density Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+`hvtiPlotR` does not provide a dedicated density-plot helper, so this chapter
+builds density plots directly with ggplot2's `geom_density()` and styles them with
+the house theme `theme_hv_manuscript()` so they stay visually consistent with the
+rest of the book.
+
+We use `hvtiPlotR::sample_eda_data()` and detect a numeric column and a
+categorical grouping column programmatically, so the recipes are robust to schema
+changes.
 
 ```{r}
-1 + 1
+#| label: data
+dat <- sample_eda_data()
+num <- names(dat)[vapply(dat, is.numeric, logical(1))][1]
+grp <- names(dat)[vapply(dat, function(x) is.factor(x) || is.character(x), logical(1))][1]
+c(numeric = num, group = grp)
+```
+
+## Single density
+
+```{r}
+#| label: density-single
+ggplot(dat, aes(x = .data[[num]])) +
+  geom_density(fill = "grey70", alpha = 0.7) +
+  labs(
+    title = "Distribution of a single numeric variable",
+    x = num,
+    y = "Density"
+  ) +
+  theme_hv_manuscript()
+```
+
+## Grouped density
+
+Mapping the grouping variable to `fill` overlays one density curve per group,
+with transparency so overlapping regions remain readable.
+
+```{r}
+#| label: density-grouped
+ggplot(dat, aes(x = .data[[num]], fill = .data[[grp]])) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Density by group",
+    x = num,
+    y = "Density",
+    fill = grp
+  ) +
+  theme_hv_manuscript()
 ```
