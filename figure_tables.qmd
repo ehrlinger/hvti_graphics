@@ -1,7 +1,131 @@
-# Combining firugres and tables
-
-See @knuth84 for additional discussion of literate programming.
+# Tables that accompany figures
 
 ```{r}
-1 + 1
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(hvtiPlotR)
+library(gt)
+library(ggplot2)
+library(patchwork)
+```
+
+Many manuscript figures are paired with a small numeric table: a
+numbers-at-risk strip below a Kaplan-Meier curve, or the count panel
+beneath a longitudinal participation bar chart. The `hvtiPlotR` plot
+objects carry these companion tables alongside the plot data, so we can
+pull the numbers straight out and render them with `gt`. As with the
+[publication tables](qt_tables.qmd) chapter, **these tables will migrate
+to the planned hvtiRtables package** once it is available.
+
+## Numbers at risk
+
+`hv_survival()` stores its companion tables in the object's `$tables`
+slot. The numbers-at-risk strip lives in `$tables$risk` (one row per
+strata × report-time) and the per-time-point summary in `$tables$report`.
+
+```{r}
+#| label: km_build
+km <- hv_survival(sample_survival_data(n = 500, seed = 42))
+names(km$tables)
+str(km$tables$risk)
+```
+
+We render the at-risk table directly with `gt`, relabelling the columns
+for presentation.
+
+```{r}
+#| label: km_risk_gt
+km$tables$risk |>
+  gt() |>
+  tab_header(
+    title = "Numbers at Risk",
+    subtitle = "Patients remaining under follow-up at each report time"
+  ) |>
+  cols_label(
+    strata      = "Stratum",
+    report_time = "Time (years)",
+    n.risk      = "At risk (n)"
+  )
+```
+
+The companion report table carries the survival estimates and confidence
+limits at the same report times — useful as the figure caption's numeric
+backing.
+
+```{r}
+#| label: km_report_gt
+km$tables$report |>
+  gt() |>
+  tab_header(title = "Survival Estimates at Report Times") |>
+  cols_label(
+    strata      = "Stratum",
+    report_time = "Time (years)",
+    surv        = "S(t)",
+    lower       = "95% LCL",
+    upper       = "95% UCL",
+    n.risk      = "At risk",
+    n.event     = "Events"
+  ) |>
+  fmt_number(columns = c(surv, lower, upper), decimals = 3)
+```
+
+## Longitudinal count table
+
+`hv_longitudinal()` produces a two-panel figure: a grouped bar chart of
+participation counts and a numeric table panel below it. The underlying
+counts live in the object's `$data` slot in long format (one row per
+time-window × series), with the column roles recorded in `$meta`.
+
+```{r}
+#| label: lc_build
+lc <- hv_longitudinal(sample_longitudinal_counts_data(n_patients = 300, seed = 42L))
+names(lc)
+lc$meta[c("x_col", "group_col", "count_col")]
+str(lc$data)
+```
+
+We reshape the long counts into a wide table — one row per follow-up
+window, one column per series — and render it with `gt`. This is the
+tabular companion to the bar chart's table panel.
+
+```{r}
+#| label: lc_table_gt
+lc_wide <- lc$data |>
+  tidyr::pivot_wider(
+    names_from  = series,
+    values_from = count
+  )
+lc_wide
+
+lc_wide |>
+  gt(rowname_col = "time_label") |>
+  tab_header(
+    title    = "Longitudinal Participation Counts",
+    subtitle = "Patients and measurements at each follow-up window"
+  ) |>
+  fmt_number(columns = where(is.numeric), decimals = 0) |>
+  tab_stubhead(label = "Follow-up window")
+```
+
+For reference, the same counts rendered as the in-figure table panel
+appear below the bar chart when the two are composed with `patchwork`.
+
+```{r}
+#| label: lc_figure
+#| fig-height: 5
+p_bar <- plot(lc) +
+  scale_fill_manual(
+    values = c(Patients = "steelblue", Measurements = "firebrick"),
+    name   = NULL
+  ) +
+  labs(x = NULL, y = "Count (n)")
+
+p_tbl <- plot(lc, type = "table") +
+  scale_colour_manual(
+    values = c(Patients = "steelblue", Measurements = "firebrick"),
+    guide  = "none"
+  )
+
+p_bar / p_tbl + plot_layout(heights = c(3, 1))
 ```
