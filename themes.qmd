@@ -19,6 +19,26 @@ the theme that matches where the figure lands.
 | `theme_hv_ppt_light()` | PowerPoint on white/light background |
 | `theme_hv_ppt_dark()` | PowerPoint on dark/navy background |
 
+## When to use it
+
+A theme is everything on a plot that is not the data: text sizes, line weights,
+background, grid. Two figures of the same cohort can need very different
+versions of that chrome depending on where they end up. A journal page is read
+from a foot away in a quiet office; a poster is read from across a hall; a slide
+is read for fifteen seconds in a dim room. The font and tick weights that work
+in one fail in the others, and the right time to deal with that is by swapping a
+single theme call rather than hand-tuning a dozen `theme()` elements per figure.
+
+The choice follows the destination, not your taste. Use `theme_hv_manuscript()`
+for anything headed to a journal: small text, white background, minimal chrome,
+tuned for a figure reduced to a column width. Use `theme_hv_poster()` for foam
+board and, often, for a projector in a meeting room, where the larger tick
+labels survive the distance. Use `theme_hv_ppt_light()` for slides on a white or
+light-grey background (the Cleveland Clinic template, most default Office decks)
+and `theme_hv_ppt_dark()` for navy or dark-gradient decks where the convention
+is white-on-dark. Match the theme to the background it will sit on and the
+distance it will be read from, and the rest takes care of itself.
+
 We render the same base trends plot under each theme, then show targeted
 overrides. The shared decorations are factored out once.
 
@@ -171,3 +191,19 @@ decorate(p_base) +
   theme_hv_poster() +
   theme(plot.margin = margin(t = 10, r = 20, b = 10, l = 20, unit = "pt"))
 ```
+
+## Pitfalls
+
+- **Poster text on a manuscript figure.** The most common mismatch is reusing a
+  poster-themed figure in a paper. The tick labels and line weights that read
+  cleanly from across a hall look heavy and oversized on a journal page, and a
+  reviewer notices. When the same analysis travels from a conference to a
+  manuscript, re-render with `theme_hv_manuscript()` rather than shrinking the
+  poster version, so the text scales correctly for its new size.
+- **Dark theme on a white slide.** `theme_hv_ppt_dark()` sets a transparent
+  background and white text on the assumption that a dark slide sits behind it.
+  Drop that figure onto a white slide and the white text vanishes. The reverse
+  fails just as badly: a light-theme figure on a navy slide gives you a glaring
+  white box in the middle of the deck. Pick the PowerPoint theme to match the
+  slide background, and check the figure against the actual master rather than
+  the white render in this book.
