@@ -1,1 +1,227 @@
 # Hazard and nonparametric curves
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
+This chapter covers three families of pre-computed curve plots: the
+parametric `hazard_plot()`, the nonparametric temporal-trend curve
+(`hv_nonparametric()`), and the ordinal-outcome curve (`hv_ordinal()`).
+
+## Hazard plot
+
+`hazard_plot()` plots pre-computed parametric curves — survival, hazard, or
+cumulative hazard — with an optional Kaplan-Meier empirical overlay. You pass
+the estimate column and its CI bounds explicitly. Two helpers generate the
+demonstration data: `sample_hazard_data()` for the parametric prediction grid
+(`survival`, `hazard`, `cumhaz` plus CI bounds) and `sample_hazard_empirical()`
+for the binned KM overlay.
+
+```{r}
+#| label: hazard_data
+dat_hp <- sample_hazard_data(n = 500, time_max = 10)
+emp_hp <- sample_hazard_empirical(n = 500, time_max = 10, n_bins = 6)
+head(dat_hp)
+```
+
+### Survival curve with KM overlay
+
+The most common variant: a smooth parametric survival curve with confidence
+band plus discrete KM empirical points and error bars.
+
+```{r}
+#| label: hazard_survival
+hazard_plot(
+  dat_hp,
+  estimate_col  = "survival",
+  lower_col     = "surv_lower",
+  upper_col     = "surv_upper",
+  empirical     = emp_hp,
+  emp_lower_col = "lower",
+  emp_upper_col = "upper"
+) +
+  scale_colour_manual(values = c("steelblue"), guide = "none") +
+  scale_fill_manual(values = c("steelblue"), guide = "none") +
+  scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = "Years", y = "Survival (%)") +
+  theme_hv_poster()
+```
+
+### Hazard rate
+
+Switch `estimate_col` to `"hazard"` and the matching CI columns for the
+instantaneous hazard rate (%/year).
+
+```{r}
+#| label: hazard_rate
+hazard_plot(
+  dat_hp,
+  estimate_col = "hazard",
+  lower_col    = "haz_lower",
+  upper_col    = "haz_upper"
+) +
+  scale_colour_manual(values = c("firebrick"), guide = "none") +
+  scale_fill_manual(values = c("firebrick"), guide = "none") +
+  scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
+  scale_y_continuous(limits = c(0, 30),
+                     labels = function(x) paste0(x, "%/yr")) +
+  labs(x = "Years", y = "Hazard (%/year)") +
+  theme_hv_poster()
+```
+
+### Cumulative hazard
+
+The `"cumhaz"` column equals `-log(S) * 100`; used for readmission and
+repeated-event analyses.
+
+```{r}
+#| label: hazard_cumhaz
+hazard_plot(
+  dat_hp,
+  estimate_col  = "cumhaz",
+  lower_col     = "cumhaz_lower",
+  upper_col     = "cumhaz_upper"
+) +
+  scale_colour_manual(values = c("darkorange"), guide = "none") +
+  scale_fill_manual(values = c("darkorange"), guide = "none") +
+  scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
+  labs(x = "Years", y = "Cumulative Hazard (%)") +
+  theme_hv_poster()
+```
+
+## Nonparametric temporal trend curve
+
+`hv_nonparametric()` prepares pre-computed average curves with bootstrap CI
+ribbons from a two-phase nonparametric temporal-trend model.
+`sample_nonparametric_curve_data()` generates the average curve and CI;
+`sample_nonparametric_curve_points()` generates the binned summary points that
+overlay it. Build the S3 object once with the matching `lower_col`/`upper_col`
+and optional `data_points`, then `plot()`.
+
+```{r}
+#| label: np_curve_data
+curve_dat <- sample_nonparametric_curve_data(
+  n            = 500,
+  time_max     = 12,
+  outcome_type = "probability",
+  ci_level     = 0.68
+)
+pts_dat <- sample_nonparametric_curve_points(n = 500, time_max = 12)
+
+np <- hv_nonparametric(
+  curve_data  = curve_dat,
+  lower_col   = "lower",
+  upper_col   = "upper",
+  data_points = pts_dat
+)
+```
+
+### Single average curve with CI ribbon
+
+The shaded ribbon here is the 68% bootstrap CI (one standard error); pass
+`ci_level = 0.95` to `sample_nonparametric_curve_data()` for 95% bands.
+
+```{r}
+#| label: np_curve_single
+plot(np) +
+  scale_colour_manual(values = c("steelblue"), guide = "none") +
+  scale_fill_manual(values   = c("steelblue"), guide = "none") +
+  scale_x_continuous(limits = c(0, 12), breaks = seq(0, 12, 2),
+                     labels = function(x) paste(x, "yr")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
+                     labels = scales::percent) +
+  labs(x = "Follow-up (years)", y = "Prevalence (%)") +
+  theme_hv_poster()
+```
+
+### Two-group comparison
+
+Pass `group_col` to the constructor to compare two average curves in a single
+panel; each group gets its own CI ribbon.
+
+```{r}
+#| label: np_curve_groups
+curve_grp <- sample_nonparametric_curve_data(
+  n            = 400,
+  time_max     = 7,
+  groups       = c("Ozaki" = 0.7, "CE-Pericardial" = 1.3),
+  outcome_type = "continuous",
+  ci_level     = 0.68
+)
+pts_grp <- sample_nonparametric_curve_points(
+  n = 400, time_max = 7,
+  groups = c("Ozaki" = 0.7, "CE-Pericardial" = 1.3),
+  outcome_type = "continuous"
+)
+np_grp <- hv_nonparametric(
+  curve_data  = curve_grp,
+  group_col   = "group",
+  lower_col   = "lower",
+  upper_col   = "upper",
+  data_points = pts_grp
+)
+
+plot(np_grp) +
+  scale_colour_manual(
+    values = c("Ozaki" = "steelblue", "CE-Pericardial" = "firebrick"),
+    name   = NULL
+  ) +
+  scale_fill_manual(
+    values = c("Ozaki" = "steelblue", "CE-Pericardial" = "firebrick"),
+    guide  = "none"
+  ) +
+  scale_x_continuous(limits = c(0, 7), breaks = 0:7) +
+  labs(x = "Follow-up (years)", y = "AV Peak Gradient (mmHg)") +
+  theme_hv_poster() +
+  theme(legend.position = c(0.15, 0.85))
+```
+
+## Nonparametric ordinal outcome curve
+
+`hv_ordinal()` prepares grade-specific probability curves from a cumulative
+proportional-odds model (e.g. TR grade or AR severity prevalence over time).
+The curve data is long format — one row per time × grade.
+`sample_nonparametric_ordinal_data()` generates the curves and
+`sample_nonparametric_ordinal_points()` the binned summary points.
+
+```{r}
+#| label: np_ordinal_data
+ord_dat <- sample_nonparametric_ordinal_data(
+  n = 800, time_max = 5,
+  grade_labels = c("None", "Mild", "Moderate", "Severe")
+)
+ord_pts <- sample_nonparametric_ordinal_points(
+  n = 800, time_max = 5,
+  grade_labels = c("None", "Mild", "Moderate", "Severe")
+)
+head(ord_dat)
+```
+
+### Grade probability curves with data points
+
+Build the object with both curve data and summary points. Each line is one
+grade level; the lines sum to approximately 1.0 at every time point.
+
+```{r}
+#| label: np_ordinal_basic
+np_ord <- hv_ordinal(curve_data = ord_dat, data_points = ord_pts)
+
+plot(np_ord) +
+  scale_colour_manual(
+    values = c("None" = "grey40", "Mild" = "steelblue",
+               "Moderate" = "darkorange", "Severe" = "firebrick"),
+    name = "AR Grade"
+  ) +
+  scale_x_continuous(limits = c(0, 5), breaks = 0:5) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
+                     labels = scales::percent) +
+  labs(x = "Follow-up (years)", y = "Grade prevalence (%)") +
+  theme_hv_poster() +
+  theme(legend.position = c(0.75, 0.6))
+```
