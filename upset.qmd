@@ -1,12 +1,170 @@
 # Venn diagrams and UpSet plots
 
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
 To show non-distinct groups and understand overlapping groupings, we turn to VENN diagrams, and UpSet plots. The general rule to show no more than four groups in VENN diagrams. If there are more than four groups, we look at UpSet Plots.
 
+## When to use it
+
+Reach for a set-membership figure whenever a patient can belong to more than one
+group at once and you want to show how those groups overlap. The classic
+cardiac-surgery case is concomitant procedure: a single operation might be an
+aortic valve replacement, or a valve replacement *plus* a CABG, or all three of
+a valve replacement, a CABG, and an aortic repair. The question is not "how many
+had each procedure" (a bar chart answers that) but "which combinations actually
+occur, and how often."
+
+The Venn diagram is the familiar answer, and for two or three sets it is the
+right one: overlapping circles, the eye reads the intersections directly. The
+trouble is that it does not scale. At four sets the diagram needs ellipses and
+already strains; past four it stops being readable, because the number of
+distinct regions grows faster than a flat drawing can lay them out cleanly.
+
+That is where the UpSet plot takes over. Instead of drawing every region as a
+patch of a circle, it lists each observed combination as a column and draws a
+bar for how many patients fall in it, with a matrix of filled and empty dots
+below showing which sets that column represents. It reads like a bar chart with
+a key, and it scales cleanly to seven sets or more.
 
 ## VENN diagrams
 
+For two or three overlapping groups, a Venn diagram is still the clearest
+display: the reader sees the intersections without a legend. Keep it to four
+sets at the most. The moment you find yourself reaching for a fourth or fifth
+circle, switch to the UpSet plot below, which is built to carry that load.
 
 ## Upset plots
 
+`hv_upset()`, from hvtiPlotR [@R-hvtiPlotR], builds an UpSet diagram via `ggupset::scale_x_upset()` to
+visualise surgical procedure co-occurrences or any set-membership data. Where a
+Venn diagram breaks down past three or four sets, UpSet scales cleanly to seven
+or more.
 
-https://www.gl-eb.me/blog/posts/2025-11-02_upset/
+`plot.hv_upset()` returns a **ggplot** when `set_size = FALSE`, or a
+**patchwork composite** of an intersection-bar plot plus a set-size sidebar
+when `set_size = TRUE` (the default). For the bare ggplot path, themes apply
+via `+`; for the patchwork path, use patchwork's `&` operator to theme every
+sub-panel.
+
+### The data it needs
+
+`sample_upset_data()` returns a binary indicator matrix: one column per
+procedure, one row per patient, with 1 indicating the procedure was performed.
+Pass the column names to `intersect` to define the set-membership axes. Run
+`colSums()` first to confirm the marginal counts; those totals are exactly what
+the set-size sidebar reports, so seeing them now makes the finished figure easy
+to sanity-check.
+
+```{r}
+#| label: upset_data
+sets <- c("AV_Replacement", "AV_Repair", "MV_Replacement", "MV_Repair",
+          "TV_Repair", "Aorta", "CABG")
+
+upset_dta <- sample_upset_data(n = 400, seed = 42)
+head(upset_dta)
+colSums(upset_dta)
+
+hu <- hv_upset(upset_dta, intersect = sets)
+```
+
+### Build it
+
+The default plot shows intersection bars (the ten most frequent combinations)
+with a set-size sidebar on the right. Because `set_size = TRUE` is the default,
+`plot()` returns a patchwork composite, so theme it with `&` to reach both
+sub-panels at once.
+
+```{r}
+#| label: upset_basic
+#| fig-width: 9
+#| fig-height: 5
+plot(hu) &
+  theme_hv_poster()
+```
+
+## Read it
+
+An UpSet plot is read from the top down, then from left to right. Look for:
+
+- **The bars, in order.** The columns are sorted by frequency, so the tallest
+  bar on the left is the single most common combination of procedures in the
+  cohort. The dot matrix beneath each bar tells you which combination: a filled
+  dot means that set is present, an empty dot means it is absent, and a vertical
+  line joins the filled dots in a multi-set combination.
+- **Singletons versus combinations.** A bar over a single filled dot is patients
+  who had only that one procedure. A bar over two or more joined dots is the
+  concomitant cases. The balance between the two is often the point of the
+  figure: are most aortic valve replacements isolated, or do they travel with a
+  CABG?
+- **The set-size sidebar.** The horizontal bars on the right are the marginal
+  totals, the same numbers `colSums()` printed above. A set with a large margin
+  but few tall intersection bars is one that spreads thinly across many rare
+  combinations.
+- **What is missing.** UpSet shows only the combinations that actually occur,
+  and only the top ten by default. A combination you expected to see and do not
+  is genuinely absent (or rare enough to fall below the cutoff), which is itself
+  worth noticing.
+
+## Variations
+
+### Custom intersection bar colour
+
+The intersection bars are a standard `geom_bar()`, so you can recolour them with
+the `bar_fill` argument. Setting `set_size = FALSE` drops the sidebar and returns
+just the intersection-bar ggplot, which you then finish with the usual `+`.
+
+```{r}
+#| label: upset_fill
+#| fig-width: 9
+#| fig-height: 5
+plot(hu, bar_fill = "steelblue", set_size = FALSE) +
+  ggplot2::labs(y = "Patients (n)") +
+  theme_hv_poster()
+```
+
+### Colour bars by era
+
+To split each intersection by a grouping column, pass `fill_col`. The bars are
+then stacked by that column's levels, which lets you ask whether the mix of
+procedure combinations shifted over time. Combine it with `scale_fill_manual()`
+to assign the colours explicitly.
+
+```{r}
+#| label: upset_era
+#| fig-width: 9
+#| fig-height: 5
+upset_dta$era <- ifelse(seq_len(nrow(upset_dta)) <= 200, "Early", "Recent")
+hu_era <- hv_upset(upset_dta, intersect = sets)
+
+plot(hu_era, fill_col = "era", set_size = FALSE) +
+  ggplot2::scale_fill_manual(
+    values = c("Early" = "grey60", "Recent" = "steelblue"),
+    name   = "Era"
+  ) +
+  ggplot2::labs(y = "Patients (n)") +
+  theme_hv_poster()
+```
+
+## Pitfalls
+
+- **Theming the wrong way for the wrong object.** When `set_size = TRUE` (the
+  default) the plot is a patchwork composite, and `+ theme_hv_poster()` styles
+  only one sub-panel, leaving the sidebar mismatched. Use `&` for the composite
+  and `+` only when you have set `set_size = FALSE`.
+- **Reading the top-ten cutoff as the whole story.** The default shows the ten
+  most frequent combinations. The long tail of rarer combinations is real and
+  may carry the unusual cases you care about; if so, raise the cutoff rather than
+  assuming the figure is exhaustive.
+- **Over-stuffing the Venn.** A four-set Venn is already at the edge of legible
+  and a five-set one is not worth drawing. If you are tempted, that is the signal
+  to switch to UpSet, not to add another ellipse.
+- **Confusing a margin with a combination.** The sidebar totals count every
+  patient who had a procedure, regardless of what else they had; the intersection
+  bars count exact combinations. A set can have a large margin and still appear in
+  no tall intersection bar because its patients scatter across many combinations.

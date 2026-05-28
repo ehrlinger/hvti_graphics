@@ -1,10 +1,18 @@
 # Figure types {.unnumbered}
 
-This is a book created from markdown and executable code.
+This is the catalog. Each chapter takes one kind of figure, shows the data it
+expects, and walks from the bare plot to a finished, decorated version you could
+drop into a manuscript.
 
-See @knuth84 for additional discussion of literate programming.
+The chapters are ordered roughly by what the figure answers, not by geom. The
+survival family comes first (Kaplan-Meier curves, hazard and nonparametric
+curves, number-needed-to-treat), because that is most of what we publish. Then
+the distribution and count plots (histograms, bars, box and density plots),
+then the figures that track something over time (spaghetti and trend plots), and
+finally the specialty diagrams that answer a specific design question: who
+entered the study (CONSORT), how groups flow between states (alluvial and
+Sankey), and whether matching worked (covariate balance).
 
-```{r}
-1 + 1
-```
-
+A few chapters (density, box plots, postage-stamp small multiples) have no
+hvtiPlotR helper. There we use bare `ggplot2` and a house theme, and say so, so
+the figure still sits comfortably next to the rest.

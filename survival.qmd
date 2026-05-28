@@ -1,9 +1,221 @@
 # Survival Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+## When to use it
+
+The Kaplan-Meier curve is the workhorse of every CORR outcomes paper. Reach for
+it whenever the question is *how long until an event* and some patients have not
+had the event yet by the end of follow-up: death, reoperation, readmission.
+That last part is what makes survival analysis its own method: a patient who is
+alive at last contact is **right-censored**, not a non-event, and the
+product-limit estimator is what lets those partial observations still count.
+
+`hv_survival()` [@R-hvtiPlotR], built on the survival package [@R-survival],
+estimates the product-limit survival function once and stores everything five
+related panels need (the survival curve, cumulative hazard, hazard rate,
+log-log check, and integrated survivorship), plus tidy summary tables in
+`$tables`. If you have used the SAS `%kaplan` macro, these are the same five
+plots it draws. You build the S3 object once and call `plot()` with a `type`
+argument to pull out the panel you want; each one comes back as a bare ggplot
+you finish with the usual `+`.
+
+## The data it needs
+
+`hv_survival()` expects long-format data: one row per patient with a follow-up
+`time` and an `event` indicator (`1` = event, `0` = censored). Nothing else is
+required for an unstratified curve; add a grouping column when you want curves
+per arm. `sample_survival_data()` builds a simulated right-censored cohort in
+exactly this shape, so the recipe runs end to end before you point it at your
+own data.
 
 ```{r}
-1 + 1
+#| label: km_data
+dta_km <- sample_survival_data(n = 500, seed = 42)
+head(dta_km)
+
+# Build the S3 object once; reuse it across every panel below.
+km <- hv_survival(dta_km)
 ```
+
+## Build it
+
+Start from the bare panel so you can see what the constructor produced before
+any styling. The default `type = "survival"` is the curve with a logit-transform
+95% confidence ribbon.
+
+```{r}
+#| label: km_bare
+plot(km)
+```
+
+Then layer on the house style. The pattern below is the one we use most often in
+CORR: a single steelblue for a one-cohort figure, percent labels on the y-axis,
+an `n =` callout in the lower-left, and a poster-sized theme. Swap
+`theme_hv_poster()` for `theme_hv_manuscript()` when you want the journal
+version.
+
+```{r}
+#| label: km_styled
+plot(km, alpha = 0.8) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Freedom from Death (%)",
+       title = "Overall Survival") +
+  annotate("text", x = 1, y = 5, label = paste0("n = ", nrow(dta_km)),
+           hjust = 0, size = 3.5) +
+  theme_hv_poster()
+```
+
+## Read it
+
+A Kaplan-Meier curve starts at 100% and steps downward at each event time; it
+never rises. A few things to look at:
+
+- **The ribbon widens to the right.** As the at-risk population thins, each
+  remaining event moves the estimate more, so the confidence band fans out. Be
+  cautious reading the far-right tail, which may rest on a handful of patients.
+- **Median survival** is where the curve crosses 50%. If it never crosses, the
+  median is not reached within follow-up and you report a different landmark
+  (e.g. 5-year survival) instead.
+- **The numbers at risk** below the figure tell the reader how much data backs
+  each region of the curve. Always show them.
+
+The at-risk strip and the per-time-point report (point estimates with CIs) are
+stored on the object, so you never recompute them:
+
+```{r}
+#| label: km_tables
+km$tables$risk
+km$tables$report
+```
+
+## Variations
+
+### Stratified by group
+
+To compare arms, pass `group_col` and the constructor fits a separate curve per
+stratum. Here we simulate a two-arm valve-type cohort with a 1.4x hazard ratio.
+Look for clearly separated curves whose CI ribbons stop overlapping in the
+windows where the treatment difference matters.
+
+```{r}
+#| label: km_strata
+dta_km_s <- sample_survival_data(
+  n             = 500,
+  strata_levels = c("Type A", "Type B"),
+  hazard_ratios = c(1, 1.4),
+  seed          = 42
+)
+km_s <- hv_survival(dta_km_s, group_col = "valve_type")
+
+plot(km_s, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Type A" = "steelblue", "Type B" = "firebrick"),
+    name   = "Valve Type"
+  ) +
+  scale_fill_manual(
+    values = c("Type A" = "steelblue", "Type B" = "firebrick"),
+    name   = "Valve Type"
+  ) +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Freedom from Death (%)",
+       title = "Survival by Valve Type") +
+  theme_hv_poster()
+```
+
+### Cumulative hazard
+
+`type = "cumhaz"` gives the Nelson-Aalen cumulative hazard
+`H(t) = -log S(t)`, a monotonically non-decreasing curve whose slope at any
+point is the instantaneous hazard rate. Same object, different `type`.
+
+```{r}
+#| label: km_cumhaz
+plot(km, type = "cumhaz") +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Years after Operation", y = "Cumulative Hazard H(t)",
+       title = "Nelson-Aalen Cumulative Hazard") +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  theme_hv_poster()
+```
+
+### Hazard rate
+
+`type = "hazard"` is the instantaneous hazard. The raw point estimates are
+noisy, so for a figure overlay a LOESS smooth. The smoothed curve shows the
+early-risk peak and later plateau a reviewer is looking for.
+
+```{r}
+#| label: km_hazard
+plot(km, type = "hazard") +
+  geom_smooth(aes(x = mid_time, y = hazard, color = strata),
+              method = "loess", se = FALSE, span = 0.6) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Years after Operation", y = "Instantaneous Hazard",
+       title = "Hazard Rate") +
+  theme_hv_poster()
+```
+
+### Log-log survival (proportional-hazards check)
+
+`type = "loglog"` plots `log(-log S(t))` against `log(time)`. Parallel lines
+across strata mean the proportional-hazards assumption is reasonable. Run this
+check before you quote a single hazard ratio. Fit with `group_col` so
+there are strata to compare.
+
+```{r}
+#| label: km_loglog
+plot(km_s, type = "loglog") +
+  scale_color_manual(
+    values = c("Type A" = "steelblue", "Type B" = "firebrick"),
+    name   = "Valve Type"
+  ) +
+  labs(x = "log(Years after Operation)", y = "log(-log S(t))",
+       title = "Log-Log Survival") +
+  theme_hv_poster()
+```
+
+### Integrated life table (restricted mean survival)
+
+`type = "life"` is the integrated survivorship: the area under the survival
+curve up to time `t`, equal to the restricted mean survival time (RMST) at that
+horizon. It rises linearly while `S(t)` is near 1 and bends as events
+accumulate. RMST is the summary to reach for when the log-log check above shows
+hazards are *not* proportional and a single hazard ratio would mislead.
+
+```{r}
+#| label: km_life
+plot(km, type = "life") +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Years after Operation",
+       y = "Restricted Mean Survival (years)",
+       title = "Integral of Survivorship") +
+  theme_hv_poster()
+```
+
+## Pitfalls
+
+- **Event coding.** `event` must be `1` for the event and `0` for censored. Flip
+  them and you estimate freedom from *being censored*, which is meaningless. Check
+  the coding before you trust the curve.
+- **Reading the tail.** The right end of the curve often rests on very few
+  patients; the widening ribbon is the warning. Quote a landmark estimate (with
+  its at-risk count) rather than the visual endpoint.
+- **Non-proportional hazards.** If the log-log curves cross, a single hazard
+  ratio is the wrong summary -- report RMST from the integrated panel instead.

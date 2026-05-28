@@ -1,0 +1,159 @@
+# CONSORT patient-flow diagrams
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
+## When to use it
+
+Every outcomes paper has to answer one question before any analysis: how did you
+get from the patients you started with to the patients you actually analysed? The
+CONSORT diagram is that answer drawn as a flow chart. It is the box-and-arrow
+figure near the front of the methods section: a top box of everyone screened, a
+side box at each step listing how many were dropped and why, and a bottom box of
+the final analysed cohort. A reviewer reads it to check that your exclusions are
+defensible and that the numbers add up.
+
+Reach for it whenever you have built a study cohort by applying a sequence of
+exclusion rules and you need to account for every patient between the registry
+pull and the analysis set. `hv_consort()` [@R-hvtiPlotR] builds the diagram
+through a multi-step API: `hv_consort_start()` initializes a patient-level
+tracker, `hv_consort_exclude()` adds an exclusion stage, and `hv_consort()`
+renders the result.
+
+One thing sets this figure apart from the rest of the book. The diagram is drawn
+by the `consort` package [@R-consort] using **grid graphics**, not ggplot. So
+unlike every other plot here, you do **not** finish it with `+ theme_*()` or any
+other ggplot layer. There is nothing to add a `+` to; the object renders itself.
+If you want to change its look, you do it through the constructor's own
+arguments, not through ggplot. The tracking helpers below give you the
+exclusion-count audit you would otherwise build by hand.
+
+## The data it needs
+
+The tracker starts from a data frame with one row per patient and whatever
+columns your exclusion rules will test. `sample_consort_data()` simulates a
+cardiac-surgery cohort and returns a finished three-stage `hv_consort_tracker`,
+which is the quickest way to see the shape of the object.
+
+```{r}
+#| label: consort_sample
+tracker <- sample_consort_data(n = 300, seed = 42)
+tracker
+```
+
+To build a tracker from your own data, start with `hv_consort_start()`, which
+records the patient identifier and marks every patient as screened. Each
+`hv_consort_exclude()` call then adds one exclusion stage. The rules are
+two-sided formulas, `<condition> ~ "<reason>"`, evaluated against the data. The
+first matching rule wins, and patients dropped in an earlier stage are skipped in
+later ones, so each stage operates only on the survivors of the last. That last
+point is what keeps the counts honest: a patient is removed once, for the first
+reason that applies, and is not counted again.
+
+```{r}
+#| label: consort_build
+set.seed(42)
+cohort <- data.frame(
+  mrn         = paste0("P", 1:300),
+  age         = sample(12:85, 300, replace = TRUE),
+  had_surgery = sample(c(TRUE, FALSE), 300, replace = TRUE, prob = c(0.9, 0.1)),
+  echo        = sample(c(TRUE, FALSE), 300, replace = TRUE, prob = c(0.85, 0.15))
+)
+
+tracker2 <- hv_consort_start(cohort, patient_id = mrn, label = "Screened") |>
+  hv_consort_exclude(
+    label        = "Eligible",
+    col          = "excl_screen",
+    age < 18     ~ "Age < 18",
+    !had_surgery ~ "No qualifying surgery"
+  ) |>
+  hv_consort_exclude(
+    label = "Analyzed",
+    col   = "excl_eligible",
+    !echo ~ "Missing echocardiogram"
+  )
+tracker2
+```
+
+## Build it
+
+`hv_consort()` derives the box layout from the tracker's stage metadata, and
+`plot()` draws it. There is no bare-then-decorated pair here, because there is
+nothing to decorate: the diagram comes out finished. By default every exclusion
+column becomes a side box; pass a character vector to `side_box` if you want to
+show only some of them.
+
+```{r}
+#| label: consort_plot
+fig <- hv_consort(tracker)
+plot(fig)
+```
+
+## Read it
+
+A CONSORT diagram is read top to bottom, with a glance sideways at each step.
+Look for:
+
+- **The arithmetic.** Every patient in the top box ends up either in a side box
+  (excluded) or in the box below. The number entering a stage minus the side-box
+  count should equal the number in the next box down. If it does not, an exclusion
+  rule is double-counting or a patient is falling through; the tracker's own
+  audit (below) is where you check.
+- **The biggest side box.** The exclusion that drops the most patients is the one
+  a reviewer scrutinises hardest. If most of your cohort leaves at a single step,
+  be ready to defend that rule, because it is doing most of the work of defining
+  who you studied.
+- **The final n.** The bottom box is the number every later figure is built on.
+  It is worth carrying that number forward into the captions of the survival and
+  trend chapters so the reader never loses track of the denominator.
+
+## Variations
+
+### Auditing the cohort
+
+The tracker is auditable, which is the point of building the diagram through it
+rather than drawing boxes by hand. `hv_consort_summary()` returns a per-stage
+count table you can drop straight into a methods section.
+
+```{r}
+#| label: consort_summary
+hv_consort_summary(tracker)
+```
+
+`hv_consort_patients()` returns the patient IDs active at a stage, or the subset
+excluded for a specific reason. This is how you go from a box on the diagram back
+to the actual patients behind it, to spot-check an exclusion or pull a list for
+a sensitivity analysis.
+
+```{r}
+#| label: consort_patients
+# IDs still in the analysed cohort
+head(hv_consort_patients(tracker, "Analyzed"))
+
+# IDs dropped at screening for being under 18
+head(hv_consort_patients(tracker, "Screened", reason = "Age < 18"))
+```
+
+## Pitfalls
+
+- **Trying to theme it like a ggplot.** This is the mistake to avoid. The diagram
+  is grid graphics, so `plot(fig) + theme_hv_manuscript()` (or any `+` layer) will
+  error or be ignored. Adjust it through `hv_consort()`'s own arguments, such as
+  `side_box`, not through ggplot.
+- **Overlapping exclusion rules.** Because the first matching rule wins, the order
+  of the formulas inside an `hv_consort_exclude()` call decides which reason a
+  patient is logged under when more than one applies. Put the rule you want to be
+  the recorded reason first, and read the summary table to confirm the counts land
+  where you expect.
+- **Numbers that do not reconcile.** If the boxes do not add up, do not patch the
+  figure; fix the rules. Use `hv_consort_summary()` and `hv_consort_patients()` to
+  find the patients in question rather than trusting the visual.
+- **A stale final n in captions.** The bottom-box count is the denominator for
+  everything downstream. Re-run the tracker whenever the cohort or the exclusion
+  rules change, and update the figure captions that quote it, so the diagram and
+  the rest of the manuscript never disagree.

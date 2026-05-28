@@ -1,6 +1,20 @@
-# Using tables
+# Tables
+
+A figure rarely travels alone. The survival curve wants its numbers at risk, the
+manuscript wants its Table 1, and the trend plot reads better next to the counts
+behind it. This part covers the tables that accompany our figures, built with
+`gt`.
 
 ```{r}
+#| label: load-tables
+#| message: false
+#| warning: false
 library(gt)
-library(gtsummary)
 ```
+
+We use `gt` directly here. A companion `hvtiRtables` package -- to give tables
+the same house treatment hvtiPlotR gives plots -- is planned but not yet written,
+so treat these recipes as the current standard rather than the final one. Two
+chapters follow: publication summary tables (the Table 1 pattern), and the tables
+that pair with a specific figure, pulled straight from the same `hv_*()` object
+that drew it.

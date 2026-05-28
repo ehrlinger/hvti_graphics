@@ -2,8 +2,23 @@
 .Rhistory
 .RData
 .Ruserdata
-_book
 
-
+# Quarto build outputs and caches
+/_book/
 /.quarto/
 **/*.quarto_ipynb
+# NOTE: _freeze/ is intentionally committed so CI (gh-pages) can render the
+# book without R or the local-source packages (TemporalHazard, hvtiRutilities,
+# ggsankey). Re-render locally to refresh it.
+
+# Stray render artifacts from single-file (standalone) renders
+/*_files/
+/site_libs/
+
+# Generated book deliverables (produced by `quarto render`)
+/HVTI-ggplot-graphics-recipes.tex
+/HVTI-ggplot-graphics-recipes.pdf
+
+# Old/auxiliary LaTeX build leftovers
+*.log
+index.tex

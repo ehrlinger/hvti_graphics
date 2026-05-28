@@ -1,9 +1,266 @@
 # Bar Chart Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+library(patchwork)
+```
 
-See @knuth84 for additional discussion of literate programming.
+## When to use it
+
+A bar chart answers a counting question. How many patients had a concomitant
+CABG this year? What fraction arrived in NYHA class III or IV? How did the size
+of each annual cohort change over the study period? Whenever the thing you want
+to show is a count or a proportion of a category, and you want it broken out
+across a second axis (usually time), the bar chart is the plain, honest display
+to reach for. Nobody misreads a bar.
+
+There are two related jobs in this chapter, and the package splits them across
+two functions. `hv_eda()` [@R-hvtiPlotR] is the exploratory workhorse you point
+at a single variable to see how its categories fall out across a reference axis;
+it is the same function that draws scatter plots for continuous columns, but
+here we stay with the categorical case where it returns bars. `hv_longitudinal()`
+is the reporting display: a grouped bar chart of how many patients and how many
+measurements you have at each follow-up window, the figure you put at the front
+of a longitudinal results section so the reader knows how much data backs the
+later curves.
+
+Both hand back a bare ggplot (or, for the longitudinal table, a panel you compose
+with `patchwork`). You dress them with colour scales, labels, and a house theme
+using the usual `+`.
+
+## The data it needs
+
+`hv_eda()` expects one row per observation with a reference axis in `x_col`
+(here the surgery `year`) and the variable of interest in `y_col`. It does not
+ask you to tell it whether that variable is categorical: `eda_classify_var()`
+inspects the column and decides. Numeric 0/1 and small-integer columns come back
+as `"Cat_Num"`, character columns as `"Cat_Char"`, and continuous columns as
+`"Cont"`. The classifier is worth running on the whole frame before you build
+anything, so you know which columns will draw as bars and which as a scatter.
 
 ```{r}
-1 + 1
+#| label: eda_data
+dta_eda <- sample_eda_data(n = 300, seed = 42)
+head(dta_eda)
+
+# Auto-detected types for each column
+sapply(dta_eda, eda_classify_var)
 ```
+
+`hv_longitudinal()` is fussier: it expects **pre-aggregated** long-format data,
+one row per time-window by series combination, with a count column. You do not
+hand it raw patient records. `sample_longitudinal_counts_data()` derives that
+shape from a simulated 300-patient registry so the recipe runs end to end.
+
+## Build it
+
+Start from the bare panel for `hv_longitudinal()` so you can see what the
+constructor produced before any styling. Build the S3 object once and reuse it
+across both panels below.
+
+```{r}
+#| label: lc_data
+lc_dat <- sample_longitudinal_counts_data(n_patients = 300, seed = 42L)
+lc_dat
+
+# Build the S3 object once; use for both panels
+lc <- hv_longitudinal(lc_dat)
+```
+
+```{r}
+#| label: lc_bare
+plot(lc)
+```
+
+That is the raw grouped bar chart: paired bars at each follow-up window, no fill
+colours, no axis range, no theme. Now layer on the house style. We give the two
+series distinct fills, expand the y-axis with `coord_cartesian()` so the tallest
+bar has headroom, and tuck the legend into the upper-right corner where the bars
+are short.
+
+```{r}
+#| label: lc_bar
+p_lc_bar <- plot(lc) +
+  ggplot2::scale_fill_manual(
+    values = c(Patients = "steelblue", Measurements = "firebrick"),
+    name   = NULL
+  ) +
+  ggplot2::scale_y_continuous(
+    breaks = seq(0, 2000, 500),
+    expand = c(0, 0)
+  ) +
+  ggplot2::coord_cartesian(ylim = c(0, 2200)) +
+  ggplot2::labs(x = NULL, y = "Count (n)") +
+  theme_hv_manuscript() +
+  ggplot2::theme(legend.position = c(0.85, 0.85))
+
+p_lc_bar
+```
+
+## Read it
+
+A grouped count bar chart is read one window at a time. A few things to look
+for:
+
+- **Patients should always be at least Measurements.** Each patient contributes
+  one or more measurements, never the other way round, so the Patients bar
+  should never sit below the Measurements bar in the same window. If it does,
+  the `series_col` mapping is pointing at the wrong column and the two series are
+  swapped.
+- **The shape of the decline.** Both bars fall as you move right across follow-up
+  windows, because patients drop out of the registry over time. A gentle taper is
+  expected; a cliff between two windows is a data-availability artefact worth
+  chasing down before you trust the curves built on those windows.
+- **The gap between the two bars.** A wide gap in a window means many patients
+  there are contributing only a single measurement, which tells you how much you
+  can lean on within-patient change in that window.
+
+## Variations
+
+The remaining variants come from `hv_eda()`, which draws the single-variable
+exploratory bars.
+
+### Binary categorical: count bars
+
+Numeric 0/1 columns are classified as `"Cat_Num"`, and `NA` values appear as an
+explicit `"(Missing)"` fill level rather than vanishing, so you can colour and
+count them. The `y_label` argument sets the title and fill-legend name in place
+of the raw column name. Here, sex by surgery year.
+
+```{r}
+#| label: eda_binary_count
+plot(hv_eda(dta_eda, x_col = "year", y_col = "male",
+            y_label = "Sex")) +
+  scale_fill_manual(
+    values = c("0" = "steelblue", "1" = "firebrick", "(Missing)" = "grey80"),
+    labels = c("0" = "Female", "1" = "Male", "(Missing)" = "Missing"),
+    name   = NULL
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  labs(x = "Surgery Year", y = "Count") +
+  theme_hv_manuscript()
+```
+
+### Binary categorical: percentage bars
+
+When you care about the *mix* rather than the absolute volume, set
+`show_percent = TRUE`. That switches `geom_bar()` to `position = "fill"`, so
+every year's bar runs the full height and the fill shows the proportion in each
+category. This is the version to use when annual cohort sizes vary a lot and a
+raw count would tell you more about volume than about case mix.
+
+```{r}
+#| label: eda_binary_percent
+plot(hv_eda(dta_eda, x_col = "year", y_col = "cabg",
+            y_label = "Concomitant CABG", show_percent = TRUE)) +
+  scale_fill_manual(
+    values = c("0" = "grey70", "1" = "steelblue", "(Missing)" = "grey90"),
+    labels = c("0" = "No CABG", "1" = "CABG", "(Missing)" = "Missing"),
+    name   = NULL
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Surgery Year", y = "Proportion") +
+  theme_hv_manuscript()
+```
+
+### Ordinal and multi-level categorical
+
+Columns with more than two numeric levels render as stacked count bars, one
+level per fill colour. For an ordered grade such as NYHA class, a reversed
+diverging palette (`"RdYlGn"`) carries the severity ordering visually, from
+green at the mild end through yellow to red at the severe end, so the reader
+sees worsening case mix without reading the legend.
+
+```{r}
+#| label: eda_ordinal
+plot(hv_eda(dta_eda, x_col = "year", y_col = "nyha",
+            y_label = "Preoperative NYHA Class")) +
+  scale_fill_brewer(
+    palette = "RdYlGn", direction = -1,
+    labels  = c("1" = "I", "2" = "II", "3" = "III", "4" = "IV",
+                "(Missing)" = "Missing"),
+    name    = "NYHA"
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  labs(x = "Surgery Year", y = "Count") +
+  theme_hv_manuscript()
+```
+
+### Character categorical
+
+String columns are classified as `"Cat_Char"` and also produce stacked count
+bars. The difference is that character levels are ordered alphabetically by
+default rather than by an implied scale, so use `scale_fill_manual()` to assign
+colours that carry clinical meaning, here one hue per valve morphology type.
+
+```{r}
+#| label: eda_char_cat
+plot(hv_eda(dta_eda, x_col = "year", y_col = "valve_morph",
+            y_label = "Valve Morphology")) +
+  scale_fill_manual(
+    values = c(Bicuspid   = "steelblue",
+               Tricuspid  = "firebrick",
+               Unicuspid  = "goldenrod3",
+               "(Missing)" = "grey80"),
+    name = "Morphology"
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  labs(x = "Surgery Year", y = "Count") +
+  theme_hv_manuscript()
+```
+
+### Longitudinal: the numeric table panel
+
+`hv_longitudinal()` carries a second panel. `plot(lc, type = "table")` renders
+the same counts as coloured text below the x-axis labels, the numeric companion
+to the bars. On its own it is sparse; it is meant to sit under the bar chart.
+
+```{r}
+#| label: lc_table
+p_lc_tbl <- plot(lc, type = "table") +
+  ggplot2::scale_colour_manual(
+    values = c(Patients = "steelblue", Measurements = "firebrick"),
+    guide  = "none"
+  ) +
+  theme_hv_manuscript()
+
+p_lc_tbl
+```
+
+### Longitudinal: the two-panel composite
+
+Stack the bar chart above the table with `patchwork`'s `/` operator, then use
+`plot_layout(heights = c(3, 1))` to give the bars three times the vertical space.
+This is the figure you actually publish: the bars carry the visual story and the
+table gives the reader the exact counts.
+
+```{r}
+#| label: lc_combined
+#| fig-height: 5
+p_lc_bar / p_lc_tbl +
+  patchwork::plot_layout(heights = c(3, 1))
+```
+
+## Pitfalls
+
+- **Count versus proportion.** A raw count bar and a `show_percent = TRUE` bar
+  answer different questions. If annual cohort sizes swing widely, a count chart
+  can make a stable case mix look like a trend, and a percentage chart can hide a
+  collapse in volume. Show whichever matches the claim, and say which it is.
+- **Dropping the missing level.** `hv_eda()` keeps `NA` as an explicit
+  `"(Missing)"` level on purpose. Recolouring it to white or styling it away
+  hides how much of each bar is unknown. Leave it visible, or at least account
+  for it in the caption.
+- **Feeding `hv_longitudinal()` raw records.** It expects pre-aggregated
+  one-row-per-window-per-series data. Hand it patient-level rows and the counts
+  will be wrong without an error. Aggregate first, or use
+  `sample_longitudinal_counts_data()` as the template for the shape.
+- **Reading a stacked bar's middle segments.** Only the bottom segment of a
+  stacked bar starts from a common baseline; the middle segments float, so their
+  heights are hard to compare across years. If a middle category is the story,
+  pull it out into its own binary count or percentage bar.

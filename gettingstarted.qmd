@@ -1,5 +1,7 @@
-# Getting Started {#sec-getstarted}
+# Getting Started
 
-We have to start somewhere, so we give a brief introduction to using R and packages we regularly use when generating ggplot2 @Wickham2009 publication figures.
-
-
+Before the figures, a little groundwork. This part covers the packages we reach
+for and the small set of conventions that keep the recipes consistent: how we
+load and document the data, and the two-step pattern every plot in the book
+follows. None of it is long, and you can skip ahead to a figure and refer back
+when something is unfamiliar.

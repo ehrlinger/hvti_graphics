@@ -1,0 +1,360 @@
+# Covariate balance and follow-up
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
+
+This chapter covers the two figures we reach for to vouch for a study before we
+report a single outcome from it. The covariate balance plot says the groups we
+are comparing were actually comparable. The goodness-of-follow-up plot says we
+kept track of the patients long enough to believe the outcome. Neither is the
+headline figure of a paper, but a reviewer who does not see them will ask, and
+both belong in the same quality-control habit.
+
+## Covariate balance plots
+
+### When to use it
+
+Whenever you compare two groups that were not randomized (a propensity-matched
+SAVR-versus-TAVR cohort, say, or an inverse-probability-weighted analysis) the
+first question is whether the comparison is fair. If the treated patients were
+sicker to begin with, any difference in outcome could just be that. The
+covariate balance plot is how we show, covariate by covariate, that matching or
+weighting pulled the two groups together.
+
+Each covariate is a row. A point shows the standardized mean difference (SMD,
+the gap between groups in standard-deviation units, scaled to a percent) for
+each comparison stage, usually before and after matching. A solid line at zero
+marks perfect balance; dotted guides at plus and minus ten percent give the eye
+a threshold for "close enough." `hv_balance()` [@R-hvtiPlotR] prepares the data
+and `plot()` hands back a bare ggplot to style with `+`.
+
+### The data it needs
+
+`hv_balance()` wants **long format**: one row per covariate-by-group
+combination, with a column for the covariate name, one for the group label
+(`"Before match"`, `"After match"`), and one for the numeric SMD.
+`sample_covariate_balance_data()` returns 12 covariates already in that shape,
+with columns `variable`, `group`, and `std_diff`.
+
+```{r}
+#| label: cov_balance_data
+dta_cb <- sample_covariate_balance_data(n_vars = 12)
+head(dta_cb)
+
+# Build the S3 object once; reuse for all plot variants below
+cb <- hv_balance(dta_cb)
+```
+
+If your numbers arrive in wide format (one column per stage, as a summary table
+or spreadsheet export usually does), reshape to long first. `reshape()` from
+base R does it in one call: name the two stage columns in `varying`, give the
+stacked value column a name with `v.names`, and tell it which column identifies
+the covariate.
+
+```{r}
+#| label: cov_balance_wide_reshape
+dta_wide <- data.frame(
+  variable      = c("Age", "Female sex", "Hypertension", "Diabetes", "COPD"),
+  `Before match` = c(22.1, -15.3,  18.7, -9.4,  11.2),
+  `After match`  = c( 3.5,   2.1,  -1.8,  4.0,  -2.3),
+  check.names = FALSE
+)
+
+dta_long <- reshape(
+  dta_wide,
+  direction = "long",
+  varying   = c("Before match", "After match"),
+  v.names   = "std_diff",
+  timevar   = "group",
+  times     = c("Before match", "After match"),
+  idvar     = "variable"
+)
+head(dta_long)
+```
+
+### Build it
+
+Start from the bare panel to see what the constructor produced. One covariate
+per row, points at their SMD values, and no colour, shape, axis limits, or theme
+yet.
+
+```{r}
+#| label: cov_balance_bare
+plot(cb, alpha = 0.8)
+```
+
+Now layer on the house style. We map `"Before match"` to red triangles and
+`"After match"` to blue squares, the colour convention this team has used for
+years, and widen the x-axis enough to hold the largest pre-match SMD. Symmetric
+breaks around zero make the plus-or-minus-ten-percent threshold easy to eyeball.
+
+```{r}
+#| label: cov_balance_scales
+plot(cb, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Before match" = "red4", "After match" = "blue3"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("Before match" = 17L, "After match" = 15L),
+    name   = NULL
+  ) +
+  scale_x_continuous(
+    limits = c(-45, 35),
+    breaks = seq(-40, 30, 10)
+  ) +
+  labs(x = "Standardized difference (%)", y = "") +
+  theme(legend.position = c(0.20, 0.95))
+```
+
+For a finished figure, place the legend and direction-of-imbalance labels inside
+the panel and switch on the poster theme. `annotate()` puts text at chosen data
+coordinates, here at the far left and far right rows, so the reader knows which
+direction favours which group. `n_vars` reads the covariate count off the data
+so the top annotation lands on the top row no matter how many covariates you
+have.
+
+```{r}
+#| label: cov_balance_annotated
+n_vars <- length(unique(dta_cb$variable))
+
+cb_final <- plot(cb, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Before match" = "red4", "After match" = "blue3"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("Before match" = 17L, "After match" = 15L),
+    name   = NULL
+  ) +
+  scale_x_continuous(
+    limits = c(-40, 30),
+    breaks = seq(-40, 30, 10)
+  ) +
+  labs(x = "Standardized difference: SAVR - TF:TAVR (%)", y = "") +
+  annotate("text", x = -30, y = 0,      label = "More likely TF-TAVR", size = 4.5) +
+  annotate("text", x =  22, y = n_vars, label = "More likely SAVR",    size = 4.5) +
+  theme(legend.position = c(0.20, 0.935)) +
+  theme_hv_poster()
+
+cb_final
+```
+
+### Read it
+
+Read down the rows, comparing the two points in each:
+
+- **The after-match points should collapse toward zero.** That is the whole
+  claim of the figure. Blue squares sitting inside the dotted plus-or-minus-ten
+  guides, with red triangles further out, is balance achieved by matching.
+- **Watch any covariate that stays imbalanced.** A blue point still well past
+  ten percent is a variable matching did not fix. You either adjust for it in
+  the outcome model or say so in the limitations.
+- **The annotations name the direction.** A positive SMD means one group has
+  more of that covariate; the panel labels tell the reader which. Without them a
+  reviewer cannot tell whether "More likely SAVR" sits left or right.
+
+### Variations
+
+#### Controlling covariate order
+
+Pass `var_levels` to the constructor to set the bottom-to-top order of rows.
+Supply any vector containing all the covariate names; the example reverses the
+default. Order covariates the way a reader scans them, often most-imbalanced at
+top, rather than by data-frame order.
+
+```{r}
+#| label: cov_balance_order
+cb_ord <- hv_balance(dta_cb, var_levels = rev(unique(dta_cb$variable)))
+
+plot(cb_ord, alpha = 0.8) +
+  scale_color_manual(
+    values = c("Before match" = "red4", "After match" = "blue3"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("Before match" = 17L, "After match" = 15L),
+    name   = NULL
+  ) +
+  labs(x = "Standardized difference (%)", y = "") +
+  theme_hv_poster()
+```
+
+## Goodness-of-follow-up plots
+
+### When to use it
+
+A survival or time-to-event analysis is only as trustworthy as its follow-up. If
+patients vanished from the records early, an apparent absence of events may just
+be an absence of looking. The goodness-of-follow-up plot is how we show a
+reviewer that the cohort was tracked across the whole study window, not just at
+the start.
+
+Each patient is a point at their operation date (x-axis) and follow-up duration
+(y-axis), with a short tick below. A dashed diagonal marks the maximum follow-up
+the study window alone could explain: a patient operated on early could be
+followed for many years, one operated on late for only a few. Points above the
+diagonal have *more* follow-up than the window explains, which happens when
+passive surveillance (registry linkage, say) extends beyond the active
+cross-sectional contact. `hv_followup()` [@R-hvtiPlotR] prepares the data; the
+`type` argument picks the panel: `"followup"` (the default death-or-censoring
+scatter) or `"event"` (a competing non-fatal event).
+
+### The data it needs
+
+`hv_followup()` wants one row per patient with an operation date, a follow-up
+duration, and a vital-status indicator. The constructor also needs three study
+dates, `study_start`, `study_end`, and `close_date`, to place the
+maximum-follow-up diagonal correctly. `sample_goodness_followup_data()`
+generates 300 patients in that shape, including a simulated non-fatal event
+column we use later.
+
+```{r}
+#| label: gfup_data
+gfup_dta <- sample_goodness_followup_data(n = 300, seed = 42)
+head(gfup_dta)
+```
+
+### Build it
+
+Build the object with the three study dates, then look at the bare panel: each
+patient as a point and tick, no scales or labels yet.
+
+```{r}
+#| label: gfup_basic
+gf <- hv_followup(
+  data        = gfup_dta,
+  origin_year = 1990,
+  study_start = as.Date("1990-01-01"),
+  study_end   = as.Date("2019-12-31"),
+  close_date  = as.Date("2021-08-06")
+)
+
+# Bare plot — no scales or labels yet
+plot(gf)
+```
+
+Now finish it. `scale_color_manual()` and `scale_shape_manual()` map the binary
+alive-or-dead state to colour and point shape; `coord_cartesian()` clips the
+view to the study window; `annotate()` labels the two states on the panel; and
+`theme_hv_manuscript()` gives the journal-sized version.
+
+```{r}
+#| label: gfup_styled
+gfup_final <- plot(gf, alpha = 0.8) +
+  scale_color_manual(
+    values   = c("#377EB8", "#E41A1C"),
+    labels   = c("Alive", "Dead"),
+    na.value = "black",
+    drop     = FALSE
+  ) +
+  scale_shape_manual(
+    values = c(1, 4),
+    labels = c("Alive", "Dead")
+  ) +
+  scale_x_continuous(breaks = seq(1990, 2020, 3)) +
+  scale_y_continuous(breaks = seq(0, 33, 3)) +
+  coord_cartesian(ylim = c(0, 33), xlim = c(1990, 2020)) +
+  labs(
+    x     = "Operation Date",
+    y     = "Follow-up (years)",
+    color = "Status",
+    shape = "Status"
+  ) +
+  annotate("text", x = 1993, y = 31, label = "Alive at close",
+           hjust = 0, size = 3.5) +
+  annotate("text", x = 1993, y = 28, label = "Deceased",
+           hjust = 0, size = 3.5, color = "#E41A1C") +
+  theme(legend.position = "none") +
+  theme_hv_manuscript()
+
+gfup_final
+```
+
+### Read it
+
+The shape of the cloud tells the story:
+
+- **A solid wedge under the diagonal is good news.** Points filling the triangle
+  below the line mean patients across the whole span of operation dates were
+  followed about as long as the window allows. Gaps or thin regions flag eras
+  where follow-up was sparse.
+- **Points above the diagonal are not errors.** They mark patients whose status
+  is known beyond the active follow-up window, usually through passive linkage.
+  A scatter of them above the line is expected; if *every* point sits exactly on
+  the line, the close date is probably set wrong.
+- **The colour split shows the events.** Red points are deaths. Where they
+  cluster (early after surgery, or late at long follow-up) is a hint at the
+  hazard pattern you will quantify in the survival analysis.
+
+### Variations
+
+#### Non-fatal event panel
+
+When the dataset carries a non-fatal competing event (relapse, reoperation),
+pass `event_col`, `event_time_col`, and optionally `death_for_event_col` to the
+constructor, then call `plot()` with `type = "event"`. The panel then shows the
+three-way event status (no event, the non-fatal event, death) instead of the
+binary alive-or-dead split.
+
+```{r}
+#| label: gfup_event_panel
+gf2 <- hv_followup(
+  gfup_dta,
+  event_col           = "ev_event",
+  event_time_col      = "iv_event",
+  death_for_event_col = "deads",
+  event_levels        = c("No event", "Relapse", "Death"),
+  origin_year         = 1990,
+  study_start         = as.Date("1990-01-01"),
+  study_end           = as.Date("2019-12-31"),
+  close_date          = as.Date("2021-08-06")
+)
+
+plot(gf2, type = "event", alpha = 0.8) +
+  scale_color_manual(
+    values = c("No event" = "blue", "Relapse" = "green3", "Death" = "red"),
+    name   = NULL
+  ) +
+  scale_shape_manual(
+    values = c("No event" = 1L, "Relapse" = 2L, "Death" = 4L),
+    name   = NULL
+  ) +
+  scale_x_continuous(breaks = seq(1990, 2020, 3)) +
+  scale_y_continuous(breaks = seq(0, 33, 3)) +
+  coord_cartesian(ylim = c(0, 33), xlim = c(1990, 2020)) +
+  labs(
+    x = "Operation Date",
+    y = "Follow-up (years)",
+    color = "Event", shape = "Event"
+  ) +
+  annotate("text", x = 1993, y = 31,
+           label = "Systematic follow-up", hjust = 0, size = 3.5) +
+  theme(legend.position = c(0.85, 0.15)) +
+  theme_hv_manuscript()
+```
+
+## Pitfalls
+
+- **Balance plots need long format.** One row per covariate-by-group
+  combination. Hand `hv_balance()` a wide table and you get one point per
+  covariate instead of the before-and-after pair; reshape first.
+- **Distinguish the groups.** If the before and after points sit on top of each
+  other for every covariate, check that the `group` column actually has two
+  distinct levels. Identical points usually mean a labelling slip, not perfect
+  matching.
+- **A single threshold is a guide, not a verdict.** The ten-percent lines are a
+  convention. A covariate just past them may matter clinically or may not;
+  judge it against what the variable is, not the line alone.
+- **The follow-up diagonal depends on the dates.** `study_start`, `study_end`,
+  and `close_date` set where the line falls. Get one wrong and every point looks
+  mis-placed relative to it. Confirm the three dates against the protocol before
+  reading the figure.
+- **Above the line is not a data error.** Points above the diagonal reflect
+  passive surveillance reaching past active contact. Do not "clean" them away;
+  they are part of why the follow-up is good.

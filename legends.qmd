@@ -1,9 +1,147 @@
 # Using legends
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+```
 
-See @knuth84 for additional discussion of literate programming.
+ggplot2 [@R-ggplot2] places the legend outside the panel by default. For publication figures
+we often move it inside, drop it, or shrink it — the axis labels frequently do
+the identification work already. Legend behaviour is controlled through
+`theme()` (or directly via a theme's `...`), and per-aesthetic via `guide =`.
+
+## When to use it
+
+A legend is the key that tells a reader which colour or shape means which group.
+You need one whenever the grouping is not already named on the panel, and you
+want it gone the moment it is. The default position, off to the right, is safe
+but wastes width: it shrinks the panel to make room for a box the reader glances
+at once. So the real decisions are where to put the legend and whether to keep
+it at all.
+
+Move the legend inside the panel when there is empty space the data do not use
+(a survival curve leaves a wide gap in one corner) and you would rather spend
+that gap than narrow the plot. Move it to the bottom when the labels are long
+and a corner would crowd. Drop it entirely when an annotation or the axis labels
+already identify the groups. Shrink its text and swatches when it has to sit
+inside a busy panel without stealing attention from the data. We use a grouped
+trends plot below so there is a multi-level legend to position.
 
 ```{r}
-1 + 1
+#| label: base
+dta_trends <- sample_trends_data(n = 600, seed = 42)
+p_base     <- plot(hv_trends(dta_trends))
 ```
+
+## Inside the panel
+
+Pass fractional coordinates `c(x, y)` to `legend.position`. `c(0, 0)` is
+bottom-left; `c(1, 1)` is top-right. A light background box keeps it legible
+over data.
+
+```{r}
+#| label: inside
+p_base +
+  scale_colour_brewer(palette = "Set1", name = NULL) +
+  scale_shape_manual(
+    values = c("Group I" = 15, "Group II" = 19,
+               "Group III" = 17, "Group IV" = 18),
+    name = NULL
+  ) +
+  labs(x = "Surgery Year", y = "Outcome") +
+  theme_hv_poster() +
+  theme(
+    legend.position   = c(0.15, 0.2),
+    legend.background = element_rect(fill = "white", colour = "grey80",
+                                     linewidth = 0.3)
+  )
+```
+
+## Outside the panel (explicit sides)
+
+Set `legend.position` to `"right"`, `"left"`, `"top"`, or `"bottom"`.
+`"bottom"` with `legend.direction = "horizontal"` is the common choice for
+multi-group figures where a corner legend would crowd the panel.
+
+```{r}
+#| label: outside
+p_base +
+  scale_colour_brewer(palette = "Set1", name = "Group") +
+  scale_shape_manual(
+    values = c("Group I" = 15, "Group II" = 19,
+               "Group III" = 17, "Group IV" = 18),
+    name = "Group"
+  ) +
+  labs(x = "Surgery Year", y = "Outcome") +
+  theme_hv_poster() +
+  theme(
+    legend.position  = "bottom",
+    legend.direction = "horizontal"
+  )
+```
+
+## Suppress all legends
+
+`theme(legend.position = "none")` hides every legend in one shot.
+Alternatively, `guide = "none"` on each `scale_*()` call drops only that
+aesthetic's legend, handy when you want a colour legend but no shape legend.
+
+```{r}
+#| label: none
+dta_km <- sample_survival_data(n = 500, seed = 42)
+km     <- hv_survival(dta_km)
+
+plot(km) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Freedom from Death (%)") +
+  theme_hv_poster()
+```
+
+## Legend text and key size
+
+The legend inherits the theme's font size, often larger than needed inside a
+crowded panel. `legend.text` controls the label font; `legend.key.size` shrinks
+the colour/shape swatch.
+
+```{r}
+#| label: text
+p_base +
+  scale_colour_brewer(palette = "Set1", name = "Group") +
+  scale_shape_manual(
+    values = c("Group I" = 15, "Group II" = 19,
+               "Group III" = 17, "Group IV" = 18),
+    name = "Group"
+  ) +
+  labs(x = "Surgery Year", y = "Outcome") +
+  theme_hv_poster() +
+  theme(
+    legend.text     = element_text(size = 9),
+    legend.key.size = unit(0.4, "cm")
+  )
+```
+
+## Pitfalls
+
+- **The legend covers data.** Moving a legend inside the panel saves width, but
+  the inside of the panel is where the data live. Drop the box on a corner that
+  looks empty today and it can sit squarely on a curve once you change the data,
+  the axis range, or the cohort. Check the placement against the actual figure,
+  not a mental image of it, and prefer a corner the data genuinely avoid (the
+  lower-left of a survival curve, the upper-left of a rising trend). When no
+  corner is safe, move the legend to the bottom rather than forcing it over the
+  data.
+- **Redundant legends.** A legend that repeats what the panel already says is
+  clutter. If an annotation labels each line, or the axis names the single
+  group, the legend adds nothing and costs space. The same redundancy creeps in
+  when colour and shape both map to the same grouping and each gets its own
+  legend box: suppress one with `guide = "none"` so the reader sees a single key,
+  not two that say the same thing. Every element on the figure should earn its
+  place; a legend that names something already named does not.

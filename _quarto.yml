@@ -1,14 +1,15 @@
 project:
   type: book
+  output-dir: _book
 
 book:
   title: "HVTI ggplot graphics recipes"
   author: "John Ehrlinger <ehrlinj@ccf.org>"
   date: today
   page-navigation: true
-  page-footer: 
-    left: "Copyright 2025, John Ehrlinger" 
-    right: 
+  page-footer:
+    left: "Copyright 2025, John Ehrlinger"
+    right:
       - icon: github
         href: https://github.com/ehrlinger/hvti_graphics
   chapters:
@@ -18,10 +19,14 @@ book:
       chapters:
         - packages.qmd
         - usingR.qmd
+        - data_governance.qmd
     - part: figures.qmd
       chapters:
         - scatter.qmd
         - survival.qmd
+        - hazard.qmd
+        - nnt.qmd
+        - temporal_hazard.qmd
         - histograms.qmd
         - density.qmd
         - bar.qmd
@@ -30,7 +35,19 @@ book:
         - spaghetti.qmd
         - postagestamp.qmd
         - specialty.qmd
+        - consort.qmd
+        - sankey.qmd
+        - balance.qmd
         - combination.qmd
+    - part: "Random forests & variable selection"
+      chapters:
+        - randomforests.qmd
+        - rf_error.qmd
+        - rf_predicted.qmd
+        - rf_vimp.qmd
+        - rf_dependence.qmd
+        - rf_roc.qmd
+        - varpro.qmd
     - part: tables.qmd
       chapters:
         - qt_tables.qmd
@@ -48,7 +65,9 @@ book:
     - summary.qmd
     - references.qmd
 
-bibliography: references.bib
+bibliography:
+  - references.bib
+  - packages.bib
 
 format:
   html:
@@ -56,8 +75,11 @@ format:
       - cosmo
       - brand
     number-sections: true
-  typst:
+  pdf:
     documentclass: scrreprt
+    keep-tex: true
+
+execute:
+  freeze: auto
 
 editor: source
-

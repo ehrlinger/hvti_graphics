@@ -1,0 +1,176 @@
+# Variable priority with varPro
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(varPro)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+```
+
+## When to use it
+
+Permutation importance (the VIMP chapter) answers "how much does the forest lean
+on this variable?" by breaking the variable and watching error rise. `varPro`
+[@R-varPro] asks a different question: "how much do the forest's own splitting
+rules *depend* on this variable?" Rather than permuting predictors, it scores
+each one by how much a tree's release rules rely on it, and calls the result
+variable *priority*. Reach for it when you want a selection that comes with a
+built-in cutoff (so the method tells you which variables to keep, not just how to
+rank them), when you want the direction and magnitude of a local effect, or when
+you want to flag unusual observations the same forest can isolate.
+
+`ggRandomForests` [@R-ggRandomForests] provides a family of `gg_*` extractors
+that pull these scores out of a fitted `varpro` object and render them as tidy
+ggplot2 graphics. This chapter works through the main extractors on a regression
+fit and a classification fit. As elsewhere, each `plot()` hands back a bare
+ggplot you finish with a house theme.
+
+## The data it needs
+
+The extractors read from a fitted `varpro` object, so the input is whatever
+`varpro()` itself needs: a formula and a data frame. The outcome type decides
+the family, and that matters here because several of the extractors are
+family-specific. We start with a regression fit, modelling fuel economy (`mpg`)
+on the rest of `mtcars`. A small `ntree` keeps the example fast; in practice you
+would use the default.
+
+```{r}
+#| label: varpro-fit
+set.seed(42)
+o <- varpro(mpg ~ ., data = mtcars, ntree = 100)
+plot(gg_varpro(o)) + theme_hv_manuscript()
+```
+
+`gg_varpro()` returns an honest 15/85 boxplot for each variable. The box spans
+the importance values obtained when the variable is released across the rule
+ensemble, and the dashed reference line at the `cutoff` (default 0.79 of the top
+score on the local-standardized scale) separates selected from unselected
+variables. Variables whose boxes sit to the right of the cutoff are retained.
+
+## Build it
+
+The plot above is the core figure. Two variants make it more informative.
+Setting `faithful = TRUE` shows the per-tree importance draws as jittered points
+behind the boxplot, exposing the spread that the summary hides:
+
+```{r}
+#| label: varpro-faithful
+plot(gg_varpro(o, faithful = TRUE)) + theme_hv_manuscript()
+```
+
+Setting `nvar` restricts the display to the top-ranked variables, handy when a
+wide problem would otherwise crowd the panel:
+
+```{r}
+#| label: varpro-nvar
+plot(gg_varpro(o, nvar = 5)) + theme_hv_manuscript()
+```
+
+## Read it
+
+The 15/85 boxplot is the figure to learn to read, and the cutoff line is what
+makes it a *selection* rather than just a ranking.
+
+- **The cutoff line decides membership.** Boxes to the right of the dashed line
+  are the variables varPro keeps; boxes to the left are set aside. Unlike a VIMP
+  bar chart, where you eyeball the break yourself, the method draws the line for
+  you. You can move it with the `cutoff` argument when you want to be stricter or
+  looser.
+- **Box width is stability.** A tight box means the variable scored consistently
+  across the rule ensemble; a wide box straddling the cutoff is a variable whose
+  selection you should not bet the paper on. Turn on `faithful = TRUE` to see the
+  raw draws behind the summary.
+- **Priority is not the same as importance.** A variable can carry high priority
+  (the rules depend on it) without the large error jump that permutation VIMP
+  rewards, and vice versa. Read the two methods as complementary views, not as
+  two attempts at the same number.
+
+## Variations
+
+### Beta-refined importance (regression only)
+
+`gg_beta_varpro()` is regression-only. Within each release region it fits a
+lasso and reports the refined slope (β) coefficients instead of a VIMP-style
+importance, so you get not just *whether* a variable matters but the direction
+and magnitude of its local linear effect.
+
+```{r}
+#| label: beta-varpro
+plot(gg_beta_varpro(o)) + theme_hv_manuscript()
+```
+
+The per-rule lasso refinement (`beta.varpro`) is the expensive step; under
+Quarto's `freeze` the result is cached after the first render. Because these are
+lasso-refined β coefficients rather than importance scores, they can be negative.
+
+### Individual variable priority
+
+`gg_ivarpro()` computes *individual* (observation-level) variable priority,
+decomposing the forest importance down to each case. On a regression fit with
+weak per-observation signal the decomposition can collapse to nothing (it
+returns zero rows), so we demonstrate it on a classification forest, which also
+lets us show the `which_class` argument. We fit `Species ~ .` on `iris`:
+
+```{r}
+#| label: ivarpro-fit
+set.seed(42)
+oc <- varpro(Species ~ ., data = iris, ntree = 100)
+plot(gg_ivarpro(oc)) + theme_hv_manuscript()
+```
+
+Each panel summarises how strongly individual observations rely on a given
+variable. For multiclass problems you can focus on a single outcome level with
+`which_class`:
+
+```{r}
+#| label: ivarpro-class
+plot(gg_ivarpro(oc, which_class = "setosa")) + theme_hv_manuscript()
+```
+
+### Conditional priority by class
+
+The classification fit also supports `conditional = TRUE` in `gg_varpro()`,
+which facets the priority bars by outcome class so you can read which predictors
+separate which classes. This option needs a classification forest; it errors on
+the regression fit.
+
+```{r}
+#| label: varpro-conditional
+plot(gg_varpro(oc, conditional = TRUE)) + theme_hv_manuscript()
+```
+
+### Anomaly / isolation scores
+
+`gg_isopro()` visualises in-sample anomaly (isolation) scores. These come from
+an `isopro` object, and there is no `.varpro` method that builds one for you: you
+construct it first with `varPro::isopro()` on the fitted forest, then pass that
+to `gg_isopro()`.
+
+```{r}
+#| label: isopro
+iso <- isopro(object = o, ntree = 100)
+plot(gg_isopro(iso)) + theme_hv_manuscript()
+```
+
+Higher isolation scores flag observations the forest separates with few splits,
+candidate outliers. Pass `newdata` to `gg_isopro()` to score held-out
+observations against the fitted isolation forest.
+
+## Pitfalls
+
+- **`gg_isopro()` needs an `isopro` object first.** There is no `.varpro` method,
+  so calling `gg_isopro()` on the `varpro` object directly fails. Build
+  `iso <- isopro(object = o, ...)` and then plot `iso`.
+- **`gg_beta_varpro()` is regression-only.** The lasso β refinement is defined
+  for a regression fit; do not expect it off a classification `varpro` object.
+- **`conditional = TRUE` needs a classification forest.** `gg_varpro(conditional
+  = TRUE)` facets priority by class, so it errors on a regression fit like the
+  `mtcars` model. Use it on a classification fit such as the `iris` one.
+- **`gg_ivarpro()` needs real signal.** Individual priority decomposes importance
+  to each observation, and on a weak regression problem (mtcars) that
+  decomposition can return zero rows and an empty plot. It works on a
+  strong-signal dataset like the `iris` classification fit, which is why the
+  individual-priority examples use that forest.
