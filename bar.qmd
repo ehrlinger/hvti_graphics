@@ -1,9 +1,160 @@
 # Bar Chart Plots
 
-This is a book created from markdown and executable code.
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5, dpi = 150)
+library(hvtiPlotR)
+library(ggplot2)
+library(patchwork)
+```
 
-See @knuth84 for additional discussion of literate programming.
+## EDA barplots
+
+`hv_eda()` drives exploratory data analysis of any variable against a reference
+time axis. `eda_classify_var()` detects whether a column is continuous,
+numeric-categorical, or character-categorical; `sample_eda_data()` generates a
+mixed-type dataset. `plot()` returns a bare ggplot to dress with colour scales,
+labels, and a theme.
 
 ```{r}
-1 + 1
+#| label: eda_data
+dta_eda <- sample_eda_data(n = 300, seed = 42)
+head(dta_eda)
+
+# Auto-detected types for each column
+sapply(dta_eda, eda_classify_var)
+```
+
+### Binary categorical: count barplot
+
+Numeric 0/1 columns are classified as `"Cat_Num"`. `NA` values appear as an
+explicit `"(Missing)"` fill level. The `y_label` argument sets the title and
+fill-legend name in place of the raw column name.
+
+```{r}
+#| label: eda_binary_count
+plot(hv_eda(dta_eda, x_col = "year", y_col = "male",
+            y_label = "Sex")) +
+  scale_fill_manual(
+    values = c("0" = "steelblue", "1" = "firebrick", "(Missing)" = "grey80"),
+    labels = c("0" = "Female", "1" = "Male", "(Missing)" = "Missing"),
+    name   = NULL
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  labs(x = "Surgery Year", y = "Count") +
+  theme_hv_manuscript()
+```
+
+### Binary categorical: percentage barplot
+
+`show_percent = TRUE` switches `geom_bar()` to `position = "fill"`.
+
+```{r}
+#| label: eda_binary_percent
+plot(hv_eda(dta_eda, x_col = "year", y_col = "cabg",
+            y_label = "Concomitant CABG", show_percent = TRUE)) +
+  scale_fill_manual(
+    values = c("0" = "grey70", "1" = "steelblue", "(Missing)" = "grey90"),
+    labels = c("0" = "No CABG", "1" = "CABG", "(Missing)" = "Missing"),
+    name   = NULL
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Surgery Year", y = "Proportion") +
+  theme_hv_manuscript()
+```
+
+### Ordinal and multi-level categorical
+
+Columns with more than two numeric levels render as stacked count bars, one
+level per fill colour. A reversed diverging palette (`"RdYlGn"`) signals grade
+severity from green (low) through yellow to red (high).
+
+```{r}
+#| label: eda_ordinal
+plot(hv_eda(dta_eda, x_col = "year", y_col = "nyha",
+            y_label = "Preoperative NYHA Class")) +
+  scale_fill_brewer(
+    palette = "RdYlGn", direction = -1,
+    labels  = c("1" = "I", "2" = "II", "3" = "III", "4" = "IV",
+                "(Missing)" = "Missing"),
+    name    = "NYHA"
+  ) +
+  scale_x_discrete(breaks = seq(2005, 2020, 5)) +
+  labs(x = "Surgery Year", y = "Count") +
+  theme_hv_manuscript()
+```
+
+## Longitudinal participation counts
+
+`hv_longitudinal()` reproduces a two-panel layout: a grouped bar chart of
+patients and measurements at each follow-up window, paired with a numeric
+summary table below. Call `plot(lc)` for the bar chart and
+`plot(lc, type = "table")` for the table panel, then compose with `patchwork`.
+Input must be pre-aggregated long-format data; `sample_longitudinal_counts_data()`
+derives it from a simulated registry.
+
+```{r}
+#| label: lc_data
+lc_dat <- sample_longitudinal_counts_data(n_patients = 300, seed = 42L)
+lc_dat
+
+# Build the S3 object once; use for both panels
+lc <- hv_longitudinal(lc_dat)
+```
+
+### Bar chart
+
+Layer fill colours onto the bare plot to distinguish Patients from
+Measurements, then expand the y-axis to leave room above the tallest bar.
+
+```{r}
+#| label: lc_bar
+p_lc_bar <- plot(lc) +
+  ggplot2::scale_fill_manual(
+    values = c(Patients = "steelblue", Measurements = "firebrick"),
+    name   = NULL
+  ) +
+  ggplot2::scale_y_continuous(
+    breaks = seq(0, 2000, 500),
+    expand = c(0, 0)
+  ) +
+  ggplot2::coord_cartesian(ylim = c(0, 2200)) +
+  ggplot2::labs(x = NULL, y = "Count (n)") +
+  theme_hv_manuscript() +
+  ggplot2::theme(legend.position = c(0.85, 0.85))
+
+p_lc_bar
+```
+
+### Numeric table panel
+
+`plot(lc, type = "table")` gives the numeric summary panel — the same counts
+rendered as coloured text below the x-axis labels, intended to be composed
+below the bar chart.
+
+```{r}
+#| label: lc_table
+p_lc_tbl <- plot(lc, type = "table") +
+  ggplot2::scale_colour_manual(
+    values = c(Patients = "steelblue", Measurements = "firebrick"),
+    guide  = "none"
+  ) +
+  theme_hv_manuscript()
+
+p_lc_tbl
+```
+
+### Two-panel layout with patchwork
+
+Stack the bar chart above the table panel with `/` and use
+`plot_layout(heights = c(3, 1))` to give the bar chart three times the vertical
+space.
+
+```{r}
+#| label: lc_combined
+#| fig-height: 5
+p_lc_bar / p_lc_tbl +
+  patchwork::plot_layout(heights = c(3, 1))
 ```
