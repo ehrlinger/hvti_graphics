@@ -137,6 +137,31 @@ ggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +
   theme_hv_manuscript()
 ```
 
+### Filling the boxes by group
+
+A grey box plot is honest but plain. Mapping `fill` to the group colours each box
+from a palette, which makes a busy panel easier to scan and ties the boxes to the
+same colours the group uses elsewhere in a figure. Because the x-axis already
+names the groups, the fill only reinforces them, so we drop the redundant legend
+with `guide = "none"` rather than spend panel space on it.
+
+```{r}
+#| label: box-filled
+ggplot(dat, aes(x = .data[[grp]], y = .data[[num]], fill = .data[[grp]])) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Set1", guide = "none") +
+  labs(
+    title = "Numeric distribution by group, filled",
+    x = grp,
+    y = num
+  ) +
+  theme_hv_manuscript()
+```
+
+When the fill encodes a *second* variable the boxes are dodged by — not the
+x-axis group — the legend earns its place; keep it then, placed inside the panel
+so it does not crowd the boxes.
+
 ## Pitfalls
 
 - **Hiding the shape.** A box plot collapses the distribution to five numbers,
