@@ -30,28 +30,28 @@ once per group.
 
 A faceted scatter needs an x and a y for the relationship inside each panel, plus
 a categorical column to split the panels on. We use
-`hvtiPlotR::sample_eda_data()`, choosing two numeric columns for the x/y
-relationship and a categorical column to facet on. The detection picks `op_years`
-(years since first surgery) for x, `male` (a 0/1 sex indicator) for y, and
-`valve_morph` (valve morphology) to facet on.
+`hvtiPlotR::sample_eda_data()` with `op_years` (years since first surgery) for x
+and `ef` (ejection fraction) for y, and we facet on operative `year`. A postage
+stamp only earns its keep when there are *many* small panels, so we restrict to a
+nine-year window, which lays out as a clean three-by-three sheet.
 
 ```{r}
 #| label: data
 dat <- sample_eda_data()
-nums <- names(dat)[vapply(dat, is.numeric, logical(1))]
-grp  <- names(dat)[vapply(dat, function(x) is.factor(x) || is.character(x), logical(1))][1]
-xvar <- nums[2]
-yvar <- nums[3]
-c(x = xvar, y = yvar, facet = grp)
+# A nine-year window facets into a 3 x 3 sheet of small multiples.
+dat      <- dat[dat$year %in% 2012:2020, ]
+dat$year <- factor(dat$year)
+xvar <- "op_years"
+yvar <- "ef"
+grp  <- "year"
+c(x = xvar, y = yvar, facet = grp, panels = nlevels(dat[[grp]]))
 ```
 
 The `.data[[xvar]]` idiom is how ggplot2 reads a column name held in a variable,
-so the recipe runs against whatever columns the detection step selected. One
-honest note: when the detected `y` is a 0/1 indicator like `male`, the points
-land on two horizontal lines and the trend reads as a changing proportion rather
-than a sloping cloud. The mechanics of faceting are identical whatever the
-columns are; substitute a continuous y from your own data (ejection fraction,
-peak gradient) and each panel becomes the scatter you would expect.
+so the recipe runs against whatever columns you name. Faceting on a window of
+years turns one busy overlay into a contact sheet you read year by year;
+substitute your own grouping (centre, severity class, era) and the mechanics are
+identical.
 
 ## Build it
 
@@ -66,16 +66,16 @@ left to right and wraps to a new row when it runs out of width.
 ggplot(dat, aes(x = .data[[xvar]], y = .data[[yvar]])) +
   geom_point(alpha = 0.4, size = 0.8) +
   geom_smooth(method = "loess", se = FALSE) +
-  facet_wrap(vars(.data[[grp]])) +
+  facet_wrap(vars(.data[[grp]]), ncol = 3) +
   labs(
-    title = "Small-multiple panels by group",
+    title = "Small-multiple panels by operative year",
     x = xvar,
     y = yvar
   ) +
   theme_hv_manuscript()
 ```
 
-The key is that all three panels share one x-axis and one y-axis. The smooth in
+The key is that all nine panels share one x-axis and one y-axis. The smooth in
 each panel is computed from that panel's data alone, so the curves are directly
 comparable: a higher curve in one panel really does mean a higher y there, not a
 trick of a rescaled axis.
@@ -93,9 +93,9 @@ isolation.
 - **Look at the trend per panel.** Each panel's smooth summarises that subgroup.
   Do the curves rise in some panels and fall in others? A pattern that differs by
   panel is exactly the interaction a single overlaid plot would have buried.
-- **Watch the density of points.** A panel with few points (the small group here)
-  gives a smooth you should not over-read; the curve is drawn with the same
-  confidence as a panel backed by ten times the data.
+- **Watch the density of points.** A panel with few points (a year with fewer
+  operations) gives a smooth you should not over-read; the curve is drawn with the
+  same confidence as a panel backed by ten times the data.
 
 ## Variations
 
