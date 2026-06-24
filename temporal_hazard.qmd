@@ -169,6 +169,70 @@ ggplot(subset(pred, !is.na(hazard)), aes(x = time, y = hazard)) +
   theme_hv_manuscript()
 ```
 
+### Observed vs parametric
+
+A parametric fit is only worth showing once you have checked it against the
+empirical curve it is meant to summarise. So overlay them: the **observed**
+Kaplan-Meier (or Nelson-Aalen) estimate is the yardstick, the **parametric**
+Weibull is the smooth model laid over it. Two series on one panel means a legend,
+and we place it inside the panel in the empty corner so it names the curves
+without covering them.
+
+```{r}
+#| label: compare-survival
+ggplot() +
+  geom_ribbon(data = km,
+              aes(x = time, ymin = cl_lower, ymax = cl_upper),
+              alpha = 0.2, fill = "grey40") +
+  geom_step(data = km,
+            aes(x = time, y = survival, colour = "Observed (Kaplan-Meier)"),
+            linewidth = 0.7) +
+  geom_line(data = pred,
+            aes(x = time, y = survival, colour = "Parametric (Weibull)"),
+            linewidth = 0.9) +
+  scale_colour_manual(
+    name   = NULL,
+    values = c("Observed (Kaplan-Meier)" = "grey40",
+               "Parametric (Weibull)"    = "steelblue")
+  ) +
+  labs(x = "Years since operation", y = "Survival probability") +
+  theme_hv_manuscript() +
+  theme(legend.position    = c(0.02, 0.02),
+        legend.justification = c(0, 0),
+        legend.background  = element_rect(fill = "white", colour = "grey80",
+                                          linewidth = 0.3))
+```
+
+Read the overlay as a fit check: where the smooth Weibull tracks the step
+function, the parametric form is describing the data; where the observed
+Kaplan-Meier curve and its grey confidence band pull away from the Weibull line,
+the single Weibull shape is the wrong summary and a multi-phase fit is the next
+move. (The band is the observed estimate's; this parametric `predict()` returns
+a point curve with no interval.) The same overlay works for cumulative hazard,
+with the Nelson-Aalen estimate as the observed series.
+
+```{r}
+#| label: compare-cumhaz
+ggplot() +
+  geom_step(data = na,
+            aes(x = time, y = cumhaz, colour = "Observed (Nelson-Aalen)"),
+            linewidth = 0.7) +
+  geom_line(data = pred,
+            aes(x = time, y = cumhaz, colour = "Parametric (Weibull)"),
+            linewidth = 0.9) +
+  scale_colour_manual(
+    name   = NULL,
+    values = c("Observed (Nelson-Aalen)" = "grey40",
+               "Parametric (Weibull)"    = "firebrick")
+  ) +
+  labs(x = "Years since operation", y = "Cumulative hazard") +
+  theme_hv_manuscript() +
+  theme(legend.position    = c(0.02, 0.98),
+        legend.justification = c(0, 1),
+        legend.background  = element_rect(fill = "white", colour = "grey80",
+                                          linewidth = 0.3))
+```
+
 ## Read it
 
 A hazard curve is read by its shape, phase by phase. The Weibull above is the

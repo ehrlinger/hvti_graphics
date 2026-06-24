@@ -34,7 +34,8 @@ book:
         - upset.qmd
         - spaghetti.qmd
         - postagestamp.qmd
-        - specialty.qmd
+    - part: specialty.qmd
+      chapters:
         - consort.qmd
         - sankey.qmd
         - balance.qmd
