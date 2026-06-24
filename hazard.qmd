@@ -17,7 +17,7 @@ cumulative-hazard estimate at a grid of time points, complete with confidence
 bounds. Three related plotting functions from hvtiPlotR [@R-hvtiPlotR] turn
 those tables into figures.
 
-Reach for `hazard_plot()` when you have a parametric prediction grid and want
+Reach for `hv_hazard()` when you have a parametric prediction grid and want
 to show the smooth curve, often with the empirical Kaplan-Meier points overlaid
 so a reviewer can judge how well the model fits. Reach for the nonparametric
 temporal-trend curve (`hv_nonparametric()`) when your outcome is a prevalence or
@@ -29,7 +29,7 @@ back a bare ggplot you decorate the usual way.
 
 ## The data it needs
 
-`hazard_plot()` takes a parametric prediction grid: one row per time point, with
+`hv_hazard()` takes a parametric prediction grid: one row per time point, with
 an estimate column (`survival`, `hazard`, or `cumhaz`) and explicit lower/upper
 CI columns that you name in the call. Two helpers generate the demonstration
 data. `sample_hazard_data()` builds the prediction grid; `sample_hazard_empirical()`
@@ -54,7 +54,7 @@ constructor has no separate bare mode here; the call below is the whole figure.
 
 ```{r}
 #| label: hazard_survival
-hazard_plot(
+plot(hv_hazard(
   dat_hp,
   estimate_col  = "survival",
   lower_col     = "surv_lower",
@@ -62,7 +62,7 @@ hazard_plot(
   empirical     = emp_hp,
   emp_lower_col = "lower",
   emp_upper_col = "upper"
-) +
+)) +
   scale_colour_manual(values = c("steelblue"), guide = "none") +
   scale_fill_manual(values = c("steelblue"), guide = "none") +
   scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
@@ -100,12 +100,12 @@ survive.
 
 ```{r}
 #| label: hazard_rate
-hazard_plot(
+plot(hv_hazard(
   dat_hp,
   estimate_col = "hazard",
   lower_col    = "haz_lower",
   upper_col    = "haz_upper"
-) +
+)) +
   scale_colour_manual(values = c("firebrick"), guide = "none") +
   scale_fill_manual(values = c("firebrick"), guide = "none") +
   scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
@@ -124,12 +124,12 @@ than reporting a survival fraction.
 
 ```{r}
 #| label: hazard_cumhaz
-hazard_plot(
+plot(hv_hazard(
   dat_hp,
   estimate_col  = "cumhaz",
   lower_col     = "cumhaz_lower",
   upper_col     = "cumhaz_upper"
-) +
+)) +
   scale_colour_manual(values = c("darkorange"), guide = "none") +
   scale_fill_manual(values = c("darkorange"), guide = "none") +
   scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
@@ -154,7 +154,7 @@ emp_strat <- sample_hazard_empirical(
   groups = c("No Takedown" = 1.0, "Takedown" = 0.65)
 )
 
-hazard_plot(
+plot(hv_hazard(
   dat_strat,
   estimate_col  = "survival",
   lower_col     = "surv_lower",
@@ -163,7 +163,7 @@ hazard_plot(
   empirical     = emp_strat,
   emp_lower_col = "lower",
   emp_upper_col = "upper"
-) +
+)) +
   scale_colour_manual(
     values = c("No Takedown" = "steelblue", "Takedown" = "firebrick"),
     name   = NULL
@@ -203,7 +203,7 @@ lt <- sample_life_table(
   time_max   = 12
 )
 
-hazard_plot(
+plot(hv_hazard(
   dat_age,
   estimate_col     = "survival",
   lower_col        = "surv_lower",
@@ -215,7 +215,7 @@ hazard_plot(
   reference        = lt,
   ref_estimate_col = "survival",
   ref_group_col    = "group"
-) +
+)) +
   scale_colour_manual(
     values = c("<65" = "steelblue", "65–80" = "forestgreen",
                "≥80" = "firebrick"),

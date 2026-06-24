@@ -159,6 +159,50 @@ Higher isolation scores flag observations the forest separates with few splits,
 candidate outliers. Pass `newdata` to `gg_isopro()` to score held-out
 observations against the fitted isolation forest.
 
+### Partial dependence curves
+
+The extractors so far rank and refine variables; partial dependence asks a
+different question — *how does the prediction move as one variable changes,
+holding the rest as they are?* `gg_partial_varpro()` runs `varPro::partialpro()`
+on the fitted forest and tidies the result into marginal-effect curves: one
+panel per variable, the predicted response across that variable's range. On the
+regression fit the y-axis is on the response scale (`mpg`).
+
+```{r}
+#| label: partial-varpro
+plot(gg_partial_varpro(object = o)) & theme_hv_manuscript()
+```
+
+`plot()` returns a panel of curves (a `patchwork`), so we finish it with `&`
+rather than `+` to apply the house theme to every panel. Each curve shows the
+modelled effect of one predictor; a flat curve is a variable the forest barely
+uses, a steep one a variable that moves the prediction. `gg_partialpro()` is the
+superseded name for this extractor in older code — it is now a thin alias for
+`gg_partial_varpro()`, so reach for the new name.
+
+## Unsupervised variable dependence
+
+Everything above needs an outcome. `varPro::uvarpro()` drops that requirement:
+it fits an *unsupervised* forest and scores how strongly each variable depends
+on the others, with no response to predict. `gg_udependent()` reads those
+cross-variable scores and draws them as a dependency graph — nodes are
+variables, edges the dependencies between them — so you can see which predictors
+travel together before any modelling. Reach for it when you want to understand
+the structure among the predictors themselves, for example to spot a cluster of
+collinear measurements.
+
+```{r}
+#| label: udependent-fit
+set.seed(42)
+uv <- uvarpro(iris[, -5], ntree = 100)
+plot(gg_udependent(uv)) + theme_hv_manuscript()
+```
+
+We fit it on the four `iris` measurements with the species label dropped, since
+the method takes no outcome. A thick edge between two variables means the forest
+finds them strongly interdependent; an isolated node is a variable that carries
+information the others do not.
+
 ## Pitfalls
 
 - **`gg_isopro()` needs an `isopro` object first.** There is no `.varpro` method,
