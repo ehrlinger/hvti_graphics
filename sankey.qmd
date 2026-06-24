@@ -156,11 +156,14 @@ plot(al2) +
 #### Milestone patient-flow with a clean y-axis
 
 A patient-flow alluvial across clinical *milestones* — admission, a device
-placement, its removal, discharge — reads better without a count axis: the band
-widths already carry the numbers, and a `Patients (n)` scale on the left only
-competes with them. Pass `show_yaxis = FALSE` to drop it. One wrinkle: a full
-house theme re-styles the axes it would reinstate, so when you finish with
-`theme_hv_manuscript()` you blank the y elements again after it.
+placement, its removal, discharge — is often read for its *shape*: where the
+flow goes, not the exact count at each stage. When that is the focus, dropping
+the count axis declutters the panel. It is a trade-off, though: as the pitfalls
+below note, the axis (or the node counts) is what lets a reader recover absolute
+numbers, so keep it whenever the denominators matter. Here the movement is the
+story, so we pass `show_yaxis = FALSE`. One wrinkle: a full house theme re-styles
+the axes it would reinstate, so when you finish with `theme_hv_manuscript()` you
+blank the y elements again after it.
 
 ```{r}
 #| label: alluvial_milestones
@@ -193,9 +196,10 @@ plot(al_ms, show_yaxis = FALSE) +
         axis.ticks.y = element_blank(), axis.line.y  = element_blank())
 ```
 
-Each band is one patient pathway from admission to discharge, coloured by where
-it ends. With the axis gone the figure reads as a flow, not a stacked bar, which
-is the point of an alluvial in the first place.
+Each band is one *pathway* — the patients who share the same admission-to-
+discharge route — its width the number who took it (the aggregated `freq`), and
+its colour where it ends. With the axis gone the figure reads as a flow, not a
+stacked bar, which is the point of an alluvial in the first place.
 
 ## Cluster-stability Sankey plots
 
