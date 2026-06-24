@@ -2,9 +2,17 @@
 
 Captured during a brainstorm before moving to code. Consolidated handoff for the
 coding session. Two repos: **hvtiPlotR** (package) and **hvti_graphics** (book).
-Companion artifacts: the hvtiPlotR Sankey spec (`hvtiPlotR/docs/superpowers/specs/2026-06-24-hv-sankey-canonical-design.md`,
-on disk — `docs/` is gitignored there) and the vault figure-conventions doc
-(`~/Documents/ObsidianVault/memory/figure-conventions.md`).
+
+> **Note on referenced artifacts.** Some companion docs live **outside this
+> repo** and CI/other contributors cannot resolve their paths — they are listed
+> for the author's local workflow only:
+> - hvtiPlotR Sankey spec — `docs/superpowers/specs/2026-06-24-hv-sankey-canonical-design.md`
+>   *within the hvtiPlotR repo*, but **untracked** (`docs/` is gitignored there).
+> - Figure-conventions house rules — in the author's Obsidian vault
+>   (out-of-repo); machine paths like `~/Documents/...` are illustrative, not
+>   resolvable in CI.
+>
+> Everything in **this** repo is referenced by repo-relative path.
 
 Branch in flight: `hvtiPlotR@feat/sankey-canonical` (spec only so far, no code).
 Per house rule: open PRs, **John merges**.

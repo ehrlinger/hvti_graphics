@@ -183,7 +183,7 @@ without covering them.
 ggplot() +
   geom_ribbon(data = km,
               aes(x = time, ymin = cl_lower, ymax = cl_upper),
-              alpha = 0.15, fill = "steelblue") +
+              alpha = 0.2, fill = "grey40") +
   geom_step(data = km,
             aes(x = time, y = survival, colour = "Observed (Kaplan-Meier)"),
             linewidth = 0.7) +
@@ -204,10 +204,12 @@ ggplot() +
 ```
 
 Read the overlay as a fit check: where the smooth Weibull tracks the step
-function, the parametric form is describing the data; where the observed curve
-wanders outside the model line (and its band), the single Weibull shape is the
-wrong summary and a multi-phase fit is the next move. The same overlay works for
-cumulative hazard, with the Nelson-Aalen estimate as the observed series.
+function, the parametric form is describing the data; where the observed
+Kaplan-Meier curve and its grey confidence band pull away from the Weibull line,
+the single Weibull shape is the wrong summary and a multi-phase fit is the next
+move. (The band is the observed estimate's; this parametric `predict()` returns
+a point curve with no interval.) The same overlay works for cumulative hazard,
+with the Nelson-Aalen estimate as the observed series.
 
 ```{r}
 #| label: compare-cumhaz
