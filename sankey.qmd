@@ -153,6 +153,54 @@ plot(al2) +
   theme_hv_poster()
 ```
 
+#### Milestone patient-flow with a clean y-axis
+
+A patient-flow alluvial across clinical *milestones* — admission, a device
+placement, its removal, discharge — is often read for its *shape*: where the
+flow goes, not the exact count at each stage. When that is the focus, dropping
+the count axis declutters the panel. It is a trade-off, though: as the pitfalls
+below note, the axis (or the node counts) is what lets a reader recover absolute
+numbers, so keep it whenever the denominators matter. Here the movement is the
+story, so we pass `show_yaxis = FALSE`. One wrinkle: a full house theme re-styles
+the axes it would reinstate, so when you finish with `theme_hv_manuscript()` you
+blank the y elements again after it.
+
+```{r}
+#| label: alluvial_milestones
+#| fig-width: 8
+#| fig-height: 5
+set.seed(1)
+n_pt <- 444
+flow <- data.frame(
+  Admission = sample(c("MCS", "No MCS"), n_pt, replace = TRUE, prob = c(.48, .52)),
+  Placement = sample(c("MCS", "No MCS"), n_pt, replace = TRUE, prob = c(.20, .80)),
+  Removal   = sample(c("MCS", "No MCS"), n_pt, replace = TRUE, prob = c(.18, .82)),
+  Discharge = sample(c("NHS", "HTx", "LVAD", "Dead"), n_pt, replace = TRUE,
+                     prob = c(.30, .29, .16, .25))
+)
+flow_agg <- aggregate(list(freq = rep(1, n_pt)), flow, length)
+
+al_ms <- hv_alluvial(
+  flow_agg,
+  axes     = c("Admission", "Placement", "Removal", "Discharge"),
+  y_col    = "freq",
+  fill_col = "Discharge"
+)
+
+plot(al_ms, show_yaxis = FALSE) +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  scale_colour_brewer(palette = "Set1", guide = "none") +
+  labs(title = "Mechanical circulatory support across the device course") +
+  theme_hv_manuscript() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(), axis.line.y  = element_blank())
+```
+
+Each band is one *pathway* — the patients who share the same admission-to-
+discharge route — its width the number who took it (the aggregated `freq`), and
+its colour where it ends. With the axis gone the figure reads as a flow, not a
+stacked bar, which is the point of an alluvial in the first place.
+
 ## Cluster-stability Sankey plots
 
 ### When to use it
@@ -190,8 +238,10 @@ table(dta_san$C9)
 ### Build it
 
 The constructor finds the `C2` through `C9` columns on its own, so the default
-build is a single call. We add a title and the poster theme; the Set1 palette
-gives each cluster letter its own colour.
+build is a single call. It derives the node order from the data — seating each
+cluster next to the parent it splits from — so the flows stay uncrossed and no
+empty placeholder boxes appear, without you naming an order. We add a title and
+the poster theme; the Set1 palette gives each cluster letter its own colour.
 
 ```{r}
 #| label: sankey_default
@@ -258,6 +308,33 @@ plot(sk_sub) +
   labs(title = "Cluster Stability: K = 2 to 6") +
   theme_hv_poster()
 ```
+
+#### Milestone labels under the K axis
+
+When the *number of distinct groups* changes at a particular column — most often
+in a collapsed view, where several clusters merge into one — it helps to call
+that out under the axis. `group_labels` takes a named vector mapping a column to
+a label, and `plot()` prints it beneath that column's tick, leaving the others
+bare. `flow_alpha` and `label_alpha` set the band and box transparency if a dense
+panel needs a lighter touch.
+
+```{r}
+#| label: sankey_milestones
+#| fig-width: 8
+#| fig-height: 5
+plot(
+  hv_sankey(dta_san),
+  group_labels = c(C2 = "2 groups", C4 = "4 groups",
+                   C6 = "6 groups", C9 = "9 groups"),
+  flow_alpha   = 0.5,
+  label_alpha  = 0.3
+) +
+  labs(title = "Cluster Stability with group-count milestones") +
+  theme_hv_poster()
+```
+
+The flow geometry is unchanged; only the x-axis gains the annotations under the
+columns you name.
 
 ## Pitfalls
 
