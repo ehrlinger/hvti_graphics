@@ -8,6 +8,7 @@ library(randomForestSRC)
 library(ggRandomForests)
 library(ggplot2)
 library(hvtiPlotR)
+library(mlbench)
 ```
 
 ## When to use it
@@ -38,27 +39,29 @@ during fitting), so they are honest estimates that need no separate test set.
 ## The data it needs
 
 ROC reads from a fitted classification forest, one whose outcome is a factor so
-the forest predicts class probabilities. We use the `breast` cancer data, where
-`status` records recurrence with two levels.
+the forest predicts class probabilities. We use the Pima Indians diabetes data
+from `mlbench` [@R-mlbench] — 768 patients with eight clinical measurements and a
+two-level `diabetes` outcome — a forest that discriminates well enough to draw a
+ROC curve worth reading.
 
 ```{r}
 #| label: rf-fit
-data(breast, package = "randomForestSRC")
-levels(breast$status)
-rf <- rfsrc(status ~ ., data = breast, ntree = 100)
+data(PimaIndiansDiabetes, package = "mlbench")
+levels(PimaIndiansDiabetes$diabetes)
+rf <- rfsrc(diabetes ~ ., data = PimaIndiansDiabetes, ntree = 100)
 rf$family
 ```
 
-The `family` field confirms a classification forest, and the levels are `N` (no
-recurrence) and `R` (recurrence). The clinically interesting event is
-recurrence, so that is the class we will treat as positive.
+The `family` field confirms a classification forest, and the levels are `neg`
+(no diabetes) and `pos` (diabetes). The clinically interesting event is a
+positive diagnosis, so that is the class we will treat as positive.
 
 ## Build it
 
 `gg_roc()` builds the out-of-bag ROC curve for one outcome. The `which_outcome`
 argument names the class to treat as positive, and the important thing is that
 it takes a *numeric index*, not the level name: `2` selects the second level,
-`R`. Pass the string `"R"` and the call errors with "subscript out of bounds".
+`pos`. Pass the string `"pos"` and the call errors with "subscript out of bounds".
 
 ```{r}
 #| label: gg-roc
@@ -67,7 +70,7 @@ plot(gg_roc(rf, which_outcome = 2)) + theme_hv_manuscript()
 
 The curve bows toward the top-left corner. The further it pulls away from the
 diagonal (the line a random classifier would trace), the better the forest
-separates recurrence from non-recurrence, and the AUC printed on the panel
+separates diabetic from non-diabetic patients, and the AUC printed on the panel
 quantifies that gap.
 
 ## Read it
@@ -111,7 +114,7 @@ is the one the forest struggles to tell apart from the others.
 
 The Brier score is a calibration measure, but in ggRandomForests `gg_brier()`
 only supports right-censored *survival* forests. It errors on a classification
-forest, so we cannot run it on the `breast` model above; instead we refit `pbc`
+forest, so we cannot run it on the Pima diabetes model above; instead we refit `pbc`
 as a survival forest and plot the integrated Brier score over follow-up time,
 the survival analogue of the calibration check we want for classification.
 
@@ -131,12 +134,12 @@ predicted probabilities themselves can be trusted.
 
 - **`which_outcome` is a number, not a name.** It is the *index* of the class to
   treat as positive. Use `2` to select the second level; passing the level name
-  like `"R"` throws "subscript out of bounds". Check `levels()` to confirm which
+  like `"pos"` throws "subscript out of bounds". Check `levels()` to confirm which
   index is the class you mean.
 - **`gg_brier()` is survival-only.** It works on right-censored survival forests
   and errors on a classification forest, which is why the Brier figure here is
-  built on a `pbc` survival fit rather than the `breast` classification fit used
-  for ROC. Do not expect a Brier curve straight off your classifier.
+  built on a `pbc` survival fit rather than the Pima diabetes classification fit
+  used for ROC. Do not expect a Brier curve straight off your classifier.
 - **Match the metric to the family.** ROC and AUC need a classification or
   probability forest; `gg_brier()` here targets survival. Picking the right tool
   for the forest family saves you a confusing error message.
