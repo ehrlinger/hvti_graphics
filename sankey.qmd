@@ -153,6 +153,50 @@ plot(al2) +
   theme_hv_poster()
 ```
 
+#### Milestone patient-flow with a clean y-axis
+
+A patient-flow alluvial across clinical *milestones* — admission, a device
+placement, its removal, discharge — reads better without a count axis: the band
+widths already carry the numbers, and a `Patients (n)` scale on the left only
+competes with them. Pass `show_yaxis = FALSE` to drop it. One wrinkle: a full
+house theme re-styles the axes it would reinstate, so when you finish with
+`theme_hv_manuscript()` you blank the y elements again after it.
+
+```{r}
+#| label: alluvial_milestones
+#| fig-width: 8
+#| fig-height: 5
+set.seed(1)
+n_pt <- 444
+flow <- data.frame(
+  Admission = sample(c("MCS", "No MCS"), n_pt, replace = TRUE, prob = c(.48, .52)),
+  Placement = sample(c("MCS", "No MCS"), n_pt, replace = TRUE, prob = c(.20, .80)),
+  Removal   = sample(c("MCS", "No MCS"), n_pt, replace = TRUE, prob = c(.18, .82)),
+  Discharge = sample(c("NHS", "HTx", "LVAD", "Dead"), n_pt, replace = TRUE,
+                     prob = c(.30, .29, .16, .25))
+)
+flow_agg <- aggregate(list(freq = rep(1, n_pt)), flow, length)
+
+al_ms <- hv_alluvial(
+  flow_agg,
+  axes     = c("Admission", "Placement", "Removal", "Discharge"),
+  y_col    = "freq",
+  fill_col = "Discharge"
+)
+
+plot(al_ms, show_yaxis = FALSE) +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  scale_colour_brewer(palette = "Set1", guide = "none") +
+  labs(title = "Mechanical circulatory support across the device course") +
+  theme_hv_manuscript() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(), axis.line.y  = element_blank())
+```
+
+Each band is one patient pathway from admission to discharge, coloured by where
+it ends. With the axis gone the figure reads as a flow, not a stacked bar, which
+is the point of an alluvial in the first place.
+
 ## Cluster-stability Sankey plots
 
 ### When to use it
