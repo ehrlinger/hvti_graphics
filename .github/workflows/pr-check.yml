@@ -1,0 +1,61 @@
+name: PR check
+
+# Validate the book on pull requests WITHOUT deploying.
+#
+# Constraint: CI cannot run R — the book depends on local-source packages it
+# cannot install — so we render from the committed `_freeze/` cache, exactly the
+# way publish.yml does. Two protections:
+#
+#   1. Render check. `quarto render --to html` must succeed. If `_freeze/` is
+#      current it renders from the cache with no R. If a code chunk changed but
+#      `_freeze/` was NOT re-rendered, Quarto tries to execute it, finds no R,
+#      and fails here — blocking the broken render before it reaches `main`.
+#   2. Stale-freeze advisory. A non-blocking heads-up: if a chapter `.qmd`
+#      changed but its `_freeze/<chapter>/` did not, remind the author to
+#      re-render locally if they touched code (prose-only edits are fine).
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Stale-freeze advisory (non-blocking)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          flagged=0
+          while IFS= read -r f; do
+            case "$f" in
+              *.qmd)
+                ch="${f%.qmd}"
+                # Only chapters with executable chunks have a _freeze cache.
+                if [ -d "_freeze/$ch" ] && ! printf '%s\n' "$changed" | grep -q "^_freeze/$ch/"; then
+                  echo "::warning file=$f::$f changed but _freeze/$ch/ was not updated. If you edited code chunks, re-render locally ('quarto render $f') and commit _freeze/$ch/, or the published site keeps the old output. (Prose-only edits can ignore this.)"
+                  flagged=1
+                fi
+                ;;
+            esac
+          done <<< "$changed"
+          if [ "$flagged" -eq 0 ]; then
+            echo "Stale-freeze advisory: no chapter changed without its _freeze/ being updated."
+          fi
+
+      - name: Render book (HTML, from frozen results)
+        run: quarto render --to html
