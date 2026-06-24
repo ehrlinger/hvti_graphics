@@ -100,6 +100,34 @@ km$tables$risk
 km$tables$report
 ```
 
+## Numbers at risk
+
+The "always show them" advice has a one-call answer. `hv_atrisk()` turns the
+object's risk table into an aligned panel, and `hv_atrisk_compose()` stacks it
+under the curve, matching the table's x-range to the plot's so the counts sit
+beneath the time points they describe. Style the curve as usual, build the table
+from the same object, and compose the two.
+
+```{r}
+#| label: km_atrisk
+#| fig-height: 5
+curve <- plot(km, alpha = 0.8) +
+  scale_color_manual(values = c(All = "steelblue"), guide = "none") +
+  scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     labels = function(x) paste0(x, "%")) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
+  labs(x = "Years after Operation", y = "Freedom from Death (%)") +
+  theme_hv_manuscript()
+
+hv_atrisk_compose(curve, hv_atrisk(km))
+```
+
+The counts under the axis are the same `km$tables$risk` numbers from above, now
+positioned at the curve's own time ticks. A stratified figure gives the table
+one row per group, labelled to match the curves.
+
 ## Variations
 
 ### Stratified by group
