@@ -4,4 +4,11 @@ This book is intended to be a single source of GGPlot2 @Wickham2009 recipes for 
 
 The book is divided into multiple parts collecting different bits of information. The *Getting Started* part gives a brief introduction to how we use R and which packages we use to create figures.
 
+If you take one thing from this book, take the shape of the workflow: construct,
+plot, decorate, save. An `hv_*()` constructor does the analysis and hands you a
+bare ggplot. You add scales, labels, and a theme. You save it for wherever it is
+going. The figure's content is decided once and its appearance as many times as
+you have audiences, and because every recipe makes its own data, you can always
+go back to a working example and adapt it.
+
 [pdf document](https://clevelandclinic.sharepoint.com/:b:/t/CORRDeptIntranet/EecPuzSkVclNhcPxHdxLCVoBm8-UzmOOq62UG_-EofpE7w?e=ZJmcrs)

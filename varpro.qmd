@@ -33,19 +33,24 @@ ggplot you finish with a house theme.
 The extractors read from a fitted `varpro` object, so the input is whatever
 `varpro()` itself needs: a formula and a data frame. The outcome type decides
 the family, and that matters here because several of the extractors are
-family-specific. We start with a regression fit, modelling fuel economy (`mpg`)
-on the rest of `mtcars`. A small `ntree` keeps the example fast; in practice you
-would use the default.
+family-specific. We start with a regression fit on the `housing` data shipped
+with `randomForestSRC` [@R-randomForestSRC] — 2,930 homes and 80 predictors,
+modelling sale price (`SalePrice`). This is the same kind of dataset the
+random-forest chapters use, and the extra width is the point: variable priority
+earns its keep when there are far more candidates than you can eyeball.
 
 ```{r}
 #| label: varpro-fit
+#| fig-height: 5.5
 set.seed(42)
-o <- varpro(mpg ~ ., data = mtcars, ntree = 100)
-plot(gg_varpro(o)) + theme_hv_manuscript()
+data(housing, package = "randomForestSRC")
+o <- varpro(SalePrice ~ ., data = housing, ntree = 100)
+plot(gg_varpro(o, nvar = 20)) + theme_hv_manuscript()
 ```
 
-`gg_varpro()` returns an honest 15/85 boxplot for each variable. The box spans
-the importance values obtained when the variable is released across the rule
+`gg_varpro()` returns an honest 15/85 boxplot for each variable. With 80
+predictors we pass `nvar = 20` to show the top-ranked; the box spans the
+importance values obtained when the variable is released across the rule
 ensemble, and the dashed reference line at the `cutoff` (default 0.79 of the top
 score on the local-standardized scale) separates selected from unselected
 variables. Variables whose boxes sit to the right of the cutoff are retained.
@@ -58,15 +63,16 @@ behind the boxplot, exposing the spread that the summary hides:
 
 ```{r}
 #| label: varpro-faithful
-plot(gg_varpro(o, faithful = TRUE)) + theme_hv_manuscript()
+#| fig-height: 5.5
+plot(gg_varpro(o, faithful = TRUE, nvar = 20)) + theme_hv_manuscript()
 ```
 
-Setting `nvar` restricts the display to the top-ranked variables, handy when a
-wide problem would otherwise crowd the panel:
+Setting `nvar` lower restricts the display further, handy when a wide problem
+like this one would otherwise crowd the panel and you only want the leaders:
 
 ```{r}
 #| label: varpro-nvar
-plot(gg_varpro(o, nvar = 5)) + theme_hv_manuscript()
+plot(gg_varpro(o, nvar = 8)) + theme_hv_manuscript()
 ```
 
 ## Read it
@@ -99,6 +105,7 @@ and magnitude of its local linear effect.
 
 ```{r}
 #| label: beta-varpro
+#| fig-height: 6
 plot(gg_beta_varpro(o)) + theme_hv_manuscript()
 ```
 
@@ -112,22 +119,27 @@ lasso-refined β coefficients rather than importance scores, they can be negativ
 decomposing the forest importance down to each case. On a regression fit with
 weak per-observation signal the decomposition can collapse to nothing (it
 returns zero rows), so we demonstrate it on a classification forest, which also
-lets us show the `which_class` argument. We fit `Species ~ .` on `iris`:
+lets us show the `which_class` argument. We fit `status ~ .` on the `breast`
+data (also from `randomForestSRC`): 198 patients, 32 predictors, and a two-level
+recurrence outcome (`N` = no recurrence, `R` = recurrence).
 
 ```{r}
 #| label: ivarpro-fit
+#| fig-height: 5.5
 set.seed(42)
-oc <- varpro(Species ~ ., data = iris, ntree = 100)
+data(breast, package = "randomForestSRC")
+oc <- varpro(status ~ ., data = breast, ntree = 100)
 plot(gg_ivarpro(oc)) + theme_hv_manuscript()
 ```
 
 Each panel summarises how strongly individual observations rely on a given
-variable. For multiclass problems you can focus on a single outcome level with
-`which_class`:
+variable. You can focus on a single outcome level with `which_class` — here the
+recurrence class:
 
 ```{r}
 #| label: ivarpro-class
-plot(gg_ivarpro(oc, which_class = "setosa")) + theme_hv_manuscript()
+#| fig-height: 5.5
+plot(gg_ivarpro(oc, which_class = "R")) + theme_hv_manuscript()
 ```
 
 ### Conditional priority by class
@@ -139,7 +151,8 @@ the regression fit.
 
 ```{r}
 #| label: varpro-conditional
-plot(gg_varpro(oc, conditional = TRUE)) + theme_hv_manuscript()
+#| fig-height: 5.5
+plot(gg_varpro(oc, conditional = TRUE, nvar = 15)) + theme_hv_manuscript()
 ```
 
 ### Anomaly / isolation scores
@@ -159,26 +172,16 @@ Higher isolation scores flag observations the forest separates with few splits,
 candidate outliers. Pass `newdata` to `gg_isopro()` to score held-out
 observations against the fitted isolation forest.
 
-### Partial dependence curves
+### Partial dependence
 
-The extractors so far rank and refine variables; partial dependence asks a
-different question — *how does the prediction move as one variable changes,
-holding the rest as they are?* `gg_partial_varpro()` runs `varPro::partialpro()`
-on the fitted forest and tidies the result into marginal-effect curves: one
-panel per variable, the predicted response across that variable's range. On the
-regression fit the y-axis is on the response scale (`mpg`).
-
-```{r}
-#| label: partial-varpro
-plot(gg_partial_varpro(object = o)) & theme_hv_manuscript()
-```
-
-`plot()` returns a panel of curves (a `patchwork`), so we finish it with `&`
-rather than `+` to apply the house theme to every panel. Each curve shows the
-modelled effect of one predictor; a flat curve is a variable the forest barely
-uses, a steep one a variable that moves the prediction. `gg_partialpro()` is the
-superseded name for this extractor in older code — it is now a thin alias for
-`gg_partial_varpro()`, so reach for the new name.
+The extractors so far rank and refine variables; partial dependence asks *how* a
+selected variable moves the prediction. `gg_partial_varpro()` runs
+`varPro::partialpro()` on the fitted forest and draws a marginal-effect curve per
+variable, with a `scale` argument that sets the y-axis to suit the outcome
+family. Because that treatment spans regression, classification, and survival, it
+gets its own chapter — see [varPro partial dependence](varpro_partial.qmd).
+(`gg_partialpro()` is the superseded name for this extractor; it is now a thin
+alias for `gg_partial_varpro()`, so reach for the new name.)
 
 ## Unsupervised variable dependence
 
@@ -193,15 +196,18 @@ collinear measurements.
 
 ```{r}
 #| label: udependent-fit
+#| fig-height: 5.5
 set.seed(42)
-uv <- uvarpro(iris[, -5], ntree = 100)
+num_cols <- names(housing)[vapply(housing, is.numeric, logical(1))]
+uv <- uvarpro(housing[, setdiff(num_cols, "SalePrice")], ntree = 100)
 plot(gg_udependent(uv)) + theme_hv_manuscript()
 ```
 
-We fit it on the four `iris` measurements with the species label dropped, since
-the method takes no outcome. A thick edge between two variables means the forest
-finds them strongly interdependent; an isolated node is a variable that carries
-information the others do not.
+We fit it on the numeric `housing` predictors (with the `SalePrice` outcome and
+the factor columns dropped — the dependency graph is built from a numeric
+distance and cannot square a mixed-type design). A thick edge between two
+variables means the forest finds them strongly interdependent; an isolated node
+is a variable that carries information the others do not.
 
 ## Pitfalls
 
@@ -212,9 +218,16 @@ information the others do not.
   for a regression fit; do not expect it off a classification `varpro` object.
 - **`conditional = TRUE` needs a classification forest.** `gg_varpro(conditional
   = TRUE)` facets priority by class, so it errors on a regression fit like the
-  `mtcars` model. Use it on a classification fit such as the `iris` one.
+  `housing` model. Use it on a classification fit such as the `breast` one.
 - **`gg_ivarpro()` needs real signal.** Individual priority decomposes importance
-  to each observation, and on a weak regression problem (mtcars) that
-  decomposition can return zero rows and an empty plot. It works on a
-  strong-signal dataset like the `iris` classification fit, which is why the
-  individual-priority examples use that forest.
+  to each observation, and on a weak problem that decomposition can return zero
+  rows and an empty plot. It works on a strong-signal fit like the `breast`
+  classification forest, which is why the individual-priority examples use it.
+- **`gg_udependent()` needs all-numeric data.** The unsupervised dependency graph
+  is built from a numeric distance, so a mixed-type design (factors plus
+  numerics, like the full `housing` frame) fails with "Adjacency matrices must be
+  square." Pass only the numeric columns, as the example does.
+- **Wide data needs `nvar`/`nvars`.** With 80 predictors the bare `gg_varpro()`
+  and `gg_partial_varpro()` displays are unreadable walls; cap them with `nvar`
+  (the boxplot) and `nvars` (which variables `partialpro` even computes, the
+  expensive step).
