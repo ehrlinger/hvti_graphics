@@ -96,7 +96,7 @@ choice is the whole point of the `scale` argument.
 
 `scale = "surv"` (the default) plots **survival probability** `S(tau | x)`,
 bounded 0 to 1 at a horizon `tau`. Leave `time` out and `tau` resolves to the
-median follow-up — reported in a message and on the axis label — so you get a
+median follow-up, printed on the axis label (here `t = 1788`), so you get a
 units-safe horizon without guessing.
 
 ```{r}
