@@ -49,6 +49,7 @@ book:
         - rf_dependence.qmd
         - rf_roc.qmd
         - varpro.qmd
+        - varpro_partial.qmd
     - part: tables.qmd
       chapters:
         - qt_tables.qmd

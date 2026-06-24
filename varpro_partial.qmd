@@ -1,0 +1,139 @@
+# varPro partial dependence
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 5, dpi = 150)
+library(varPro)
+library(ggRandomForests)
+library(ggplot2)
+library(hvtiPlotR)
+library(randomForestSRC)
+library(survival)
+```
+
+## When to use it
+
+The varPro chapter ranks and selects variables; this one asks the next question
+*how* a selected variable moves the prediction. `gg_partial_varpro()` runs
+`varPro::partialpro()` on a fitted `varpro` object and tidies the result into
+marginal-effect curves: one panel per variable, the predicted response across
+that variable's range with the rest of the design held as observed. Reach for it
+once selection has narrowed the field and you want to read the shape and
+direction of each survivor's effect, not just its rank.
+
+The y-axis is the part worth knowing in advance, because it depends on the
+outcome family and you can choose it. A `scale` argument sets what the curve
+plots: response units for regression, a probability or log-odds for
+classification, and survival probability, restricted mean survival time, or
+ensemble mortality for a survival fit. That choice is the difference between a
+figure a clinician reads at a glance and one only the modeller understands.
+
+## The data it needs
+
+`gg_partial_varpro()` reads a fitted `varpro` object, so we build one of each
+family up front, reusing the datasets from the random-forest chapters: `housing`
+for regression, `breast` for classification, and `pbc` for survival.
+
+```{r}
+#| label: fits
+set.seed(42)
+data(housing, package = "randomForestSRC")
+data(breast,  package = "randomForestSRC")
+data(pbc,     package = "randomForestSRC")
+
+o_reg  <- varpro(SalePrice ~ .,            data = housing, ntree = 100)
+o_cls  <- varpro(status ~ .,               data = breast,  ntree = 100)
+o_surv <- varpro(Surv(days, status) ~ .,   data = pbc,     ntree = 100)
+c(regression = o_reg$family, classification = o_cls$family, survival = o_surv$family)
+```
+
+Across all three the call is the same; only the `scale` (and, for survival, an
+optional `time`) changes. With wide data we pass `nvars` so `partialpro` only
+computes the top-ranked handful — it is the expensive step, and on a survival
+fit it is expensive enough to matter.
+
+## Regression: the response scale
+
+On a regression fit the y-axis is the response in its own units. Here that is
+`SalePrice`, so each curve reads as dollars of sale price across the predictor.
+
+```{r}
+#| label: partial-regression
+plot(gg_partial_varpro(object = o_reg, nvars = 6)) & theme_hv_manuscript()
+```
+
+`plot()` returns a `patchwork` panel, so we theme it with `&`. A rising curve is
+a variable that pushes the prediction up over its range; a flat one is a variable
+the forest barely leans on once the others are fixed.
+
+## Classification: probability or log-odds
+
+A classification fit defaults to **probability** — `P(Y = the target class)`,
+bounded 0 to 1 and the scale a clinician expects.
+
+```{r}
+#| label: partial-prob
+plot(gg_partial_varpro(object = o_cls, nvars = 6, scale = "prob")) &
+  theme_hv_manuscript()
+```
+
+Setting `scale = "logodds"` plots the same effect on the log-odds scale, which is
+linear in the model's own terms and is the only scale on which the `causal`
+(virtual-twins) contrast is shown. Use probability to communicate and log-odds to
+diagnose.
+
+```{r}
+#| label: partial-logodds
+plot(gg_partial_varpro(object = o_cls, nvars = 6, scale = "logodds")) &
+  theme_hv_manuscript()
+```
+
+## Survival: probability, RMST, or mortality
+
+A survival fit gives you three readings of the same partial effect, and the
+choice is the whole point of the `scale` argument.
+
+`scale = "surv"` (the default) plots **survival probability** `S(tau | x)`,
+bounded 0 to 1 at a horizon `tau`. Leave `time` out and `tau` resolves to the
+median follow-up — reported in a message and on the axis label — so you get a
+units-safe horizon without guessing.
+
+```{r}
+#| label: partial-surv
+plot(gg_partial_varpro(object = o_surv, nvars = 4, scale = "surv")) &
+  theme_hv_manuscript()
+```
+
+`scale = "rmst"` plots **restricted mean survival time**: the expected event-free
+time within the first `tau` days, read in the model's own time units and
+higher-is-better. It answers "how much time does this variable buy?" rather than
+"what is the probability at `tau`."
+
+```{r}
+#| label: partial-rmst
+plot(gg_partial_varpro(object = o_surv, nvars = 4, scale = "rmst")) &
+  theme_hv_manuscript()
+```
+
+The third option, `scale = "mortality"`, is the unbounded ensemble-mortality
+score — higher is worse, the opposite direction from the two bounded scales above.
+It is the right choice only when you are comparing against other random-forest
+mortality outputs; for a figure a reviewer reads, prefer `surv` or `rmst`.
+
+## Pitfalls
+
+- **`partialpro` is the expensive step.** It recomputes for every variable you
+  ask for and, on a survival fit, for the whole time grid. Always cap it with
+  `nvars`; under Quarto's `freeze` the result is cached after the first render.
+- **The y-axis depends on `scale`, and the default depends on the family.**
+  Regression is response units, classification defaults to probability, survival
+  defaults to survival probability. State the scale in the caption so a reader
+  knows whether higher is better (`surv`, `rmst`) or worse (`mortality`).
+- **`tau` must be in the fit's time units.** For `surv`/`rmst`, a `time` beyond
+  the largest event time truncates to the full restricted mean; omit `time` to
+  let it default to the median follow-up.
+- **The `causal` contrast only shows on `logodds`.** On the bounded probability
+  and survival scales it is hidden by design, so do not expect the virtual-twins
+  estimate there.
+```

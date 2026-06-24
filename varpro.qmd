@@ -172,29 +172,16 @@ Higher isolation scores flag observations the forest separates with few splits,
 candidate outliers. Pass `newdata` to `gg_isopro()` to score held-out
 observations against the fitted isolation forest.
 
-### Partial dependence curves
+### Partial dependence
 
-The extractors so far rank and refine variables; partial dependence asks a
-different question — *how does the prediction move as one variable changes,
-holding the rest as they are?* `gg_partial_varpro()` runs `varPro::partialpro()`
-on the fitted forest and tidies the result into marginal-effect curves: one
-panel per variable, the predicted response across that variable's range. On the
-regression fit the y-axis is on the response scale (`SalePrice`). With 80
-predictors we pass `nvars = 6` so `partialpro` only computes (and draws) the
-top-ranked handful — running it on every variable is both slow and unreadable.
-
-```{r}
-#| label: partial-varpro
-#| fig-height: 5
-plot(gg_partial_varpro(object = o, nvars = 6)) & theme_hv_manuscript()
-```
-
-`plot()` returns a panel of curves (a `patchwork`), so we finish it with `&`
-rather than `+` to apply the house theme to every panel. Each curve shows the
-modelled effect of one predictor; a flat curve is a variable the forest barely
-uses, a steep one a variable that moves the prediction. `gg_partialpro()` is the
-superseded name for this extractor in older code — it is now a thin alias for
-`gg_partial_varpro()`, so reach for the new name.
+The extractors so far rank and refine variables; partial dependence asks *how* a
+selected variable moves the prediction. `gg_partial_varpro()` runs
+`varPro::partialpro()` on the fitted forest and draws a marginal-effect curve per
+variable, with a `scale` argument that sets the y-axis to suit the outcome
+family. Because that treatment spans regression, classification, and survival, it
+gets its own chapter — see [varPro partial dependence](varpro_partial.qmd).
+(`gg_partialpro()` is the superseded name for this extractor; it is now a thin
+alias for `gg_partial_varpro()`, so reach for the new name.)
 
 ## Unsupervised variable dependence
 
