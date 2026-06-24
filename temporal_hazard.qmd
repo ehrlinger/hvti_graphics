@@ -233,6 +233,33 @@ ggplot() +
                                           linewidth = 0.3))
 ```
 
+### Numbers at risk
+
+A survival figure should carry its denominators. The empirical curve here is a
+plain data frame, with no `$tables$risk` to draw on, so we hand `hv_atrisk()` the
+subject-level data directly — the `time` and `status` columns — and compose the
+table under the curve, aligned to its ticks.
+
+```{r}
+#| label: th_atrisk
+#| fig-height: 5
+curve_km <- ggplot(km, aes(x = time, y = survival)) +
+  geom_ribbon(aes(ymin = cl_lower, ymax = cl_upper),
+              alpha = 0.2, fill = "steelblue") +
+  geom_step(colour = "steelblue", linewidth = 0.7) +
+  labs(x = "Years since operation", y = "Survival probability") +
+  theme_hv_manuscript()
+
+hv_atrisk_compose(
+  curve_km,
+  hv_atrisk(cabgkul, time = "int_dead", status = "dead")
+)
+```
+
+For an `hv_survival()` object the at-risk table comes for free from
+`$tables$risk` (see the survival chapter); for a curve built from raw columns
+like this one, the subject-level path rebuilds it.
+
 ## Read it
 
 A hazard curve is read by its shape, phase by phase. The Weibull above is the
