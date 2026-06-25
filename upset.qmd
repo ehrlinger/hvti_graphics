@@ -39,6 +39,31 @@ display: the reader sees the intersections without a legend. Keep it to four
 sets at the most. The moment you find yourself reaching for a fourth or fifth
 circle, switch to the UpSet plot below, which is built to carry that load.
 
+`hv_venn()`, from hvtiPlotR [@R-hvtiPlotR], builds one from the same kind of
+set-membership data the UpSet plot uses: pass the data frame and the columns to
+treat as sets, then `plot()`. We pick three procedures that can co-occur. A Venn
+is coordinate-free, so we do **not** add a house theme — `plot.hv_venn()` styles
+the diagram itself, and `theme_hv_manuscript()` would only paste spurious x/y
+axes back onto it.
+
+```{r}
+#| label: venn
+#| fig-width: 7
+#| fig-height: 5
+#| fig-cap: "Three-set Venn of co-occurring procedures, each region labelled with its patient count and percent"
+venn_dta <- sample_upset_data(n = 400, seed = 42)
+plot(
+  hv_venn(venn_dta, sets = c("AV_Replacement", "MV_Replacement", "CABG")),
+  set_name_size = 5
+)
+```
+
+Each region carries its patient count and percentage. The empty
+replacement-on-replacement overlap (`0`) is the clinically expected finding —
+patients rarely have both valves replaced in one operation — while CABG overlaps
+both. Past three or four sets the circles stop separating cleanly, which is the
+cue to switch to the UpSet plot.
+
 ## Upset plots
 
 `hv_upset()`, from hvtiPlotR [@R-hvtiPlotR], builds an UpSet diagram via `ggupset::scale_x_upset()` to
@@ -81,7 +106,8 @@ with a set-size sidebar on the right. Because `set_size = TRUE` is the default,
 sub-panels at once.
 
 ```{r}
-#| label: upset_basic
+#| label: fig-upset
+#| fig-cap: "The ten most frequent procedure combinations as intersection bars, with a set-size sidebar of marginal totals"
 #| fig-width: 9
 #| fig-height: 5
 plot(hu) &
@@ -120,7 +146,8 @@ the `bar_fill` argument. Setting `set_size = FALSE` drops the sidebar and return
 just the intersection-bar ggplot, which you then finish with the usual `+`.
 
 ```{r}
-#| label: upset_fill
+#| label: fig-upset-fill
+#| fig-cap: "The intersection bars alone, recoloured and with the set-size sidebar dropped"
 #| fig-width: 9
 #| fig-height: 5
 plot(hu, bar_fill = "steelblue", set_size = FALSE) +
@@ -136,7 +163,8 @@ procedure combinations shifted over time. Combine it with `scale_fill_manual()`
 to assign the colours explicitly.
 
 ```{r}
-#| label: upset_era
+#| label: fig-upset-era
+#| fig-cap: "Each intersection bar split and stacked by era, showing whether the mix of procedure combinations shifted over time"
 #| fig-width: 9
 #| fig-height: 5
 upset_dta$era <- ifelse(seq_len(nrow(upset_dta)) <= 200, "Early", "Recent")

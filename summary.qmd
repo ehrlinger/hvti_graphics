@@ -7,10 +7,13 @@ going. The figure's content is decided once and its appearance as many times as
 you have audiences, and because every recipe makes its own data, you can always
 go back to a working example and adapt it.
 
-Two things are deliberately left for later. Tables lean on `gt` directly until a
+One thing is deliberately left for later: tables lean on `gt` directly until a
 companion `hvtiRtables` package gives them the same house treatment the plots
-get. And the random-forest chapters track the `ggRandomForests` v3.0.0 line, so
-those recipes are worth a second look once it reaches CRAN.
+get.
+
+A version note: the random-forest chapters run on the `ggRandomForests` 3.x API
+(varPro priority, partial dependence, ROC), a line that is still moving — pin the
+package version when you reproduce them.
 
 Treat the book as living. When you build a figure for a paper that is not here,
 or find a cleaner way to draw one that is, add it. The point of collecting these

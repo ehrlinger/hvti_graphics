@@ -2,7 +2,7 @@
 
 [![Publish](https://github.com/ehrlinger/hvti_graphics/actions/workflows/publish.yml/badge.svg)](https://github.com/ehrlinger/hvti_graphics/actions/workflows/publish.yml)
 [![Site](https://img.shields.io/badge/read-ehrlinger.github.io%2Fhvti__graphics-1f6feb)](https://ehrlinger.github.io/hvti_graphics/)
-[![Version](https://img.shields.io/badge/edition-1.0.0-blue)](https://github.com/ehrlinger/hvti_graphics/releases)
+[![Version](https://img.shields.io/badge/edition-2.0.0-blue)](https://github.com/ehrlinger/hvti_graphics/releases)
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey)](https://creativecommons.org/licenses/by/4.0/)
 
 A working catalog of the figures we draw for CORR manuscripts and
@@ -13,8 +13,11 @@ from a working recipe, not a blank script.
 
 **Read it here:** <https://ehrlinger.github.io/hvti_graphics/>
 
-This is the **1.0.0** edition: the full figure catalog, the random-forest and
-varPro recipes, and every chapter on the current `hvti*` package APIs.
+This is the **2.0.0** edition: the full figure catalog plus dedicated chapters
+on varPro partial dependence and on slides/presentations; numbers-at-risk
+composites and the canonical cluster Sankey from hvtiPlotR 2.5.0; and a
+house figure-conventions pass (in-panel legends and annotations). Every chapter
+runs on the current `hvti*`, `ggRandomForests`, and `varPro` APIs.
 
 ## Who it's for
 
