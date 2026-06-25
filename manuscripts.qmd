@@ -31,14 +31,33 @@ p_ms
 
 ## Manuscript PDF
 
-The naive approach is `ggsave(width = 11, height = 8.5)` (US Letter landscape).
-That fixes the *file* dimensions but lets the panel float inside them.
-`hv_ggsave_dims()` inverts the problem: you specify the panel content area you
-want (the rectangular bounding box of the gtable cells tagged `panel`) and it
-returns the `width`/`height`/`units` such that `ggsave()` yields exactly that
-panel size, expanding the file to absorb axes, titles, and legend (the
-"chrome"). The result is a named list shaped to splat directly into `ggsave()`
-via `do.call()`.
+For most figures the quickest path is `save_manuscript()`, which writes a
+finished plot at the house manuscript size — 6 × 4 inches — in one call.
+
+```{r}
+#| label: save-manuscript-default
+#| eval: false
+save_manuscript(p_ms, "trends_manuscript.pdf")
+```
+
+It is the manuscript counterpart of `save_ppt()`: it fixes the output geometry,
+not the theme, so the 12 pt type comes from the `theme_hv_manuscript()` you have
+already applied. Override the size when a journal asks for it — for a single
+column, say `save_manuscript(p_ms, "fig.pdf", width = 3.5, height = 3)` — and
+pass `device = cairo_pdf` to embed fonts where your system has cairo. The chunks
+in this section are `eval: false` because each writes a binary file.
+
+### Holding the panel constant across a figure set
+
+`save_manuscript()`, like `ggsave()`, fixes the *file* dimensions but lets the
+panel float inside them. When you need the panel content area identical across
+several figures — so the data regions line up regardless of how much room each
+plot's axis labels take — `hv_ggsave_dims()` inverts the problem: you specify the
+panel content area you want (the rectangular bounding box of the gtable cells
+tagged `panel`) and it returns the `width`/`height`/`units` such that `ggsave()`
+yields exactly that panel size, expanding the file to absorb axes, titles, and
+legend (the "chrome"). The result is a named list shaped to splat directly into
+`ggsave()` via `do.call()`.
 
 ```{r}
 #| label: save-manuscript
