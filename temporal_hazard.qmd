@@ -186,7 +186,7 @@ without covering them.
 ```{r}
 #| label: fig-temporal_hazard
 #| fig-cap: "Observed Kaplan-Meier survival overlaid with the parametric Weibull curve as a fit check"
-ggplot() +
+p_th_surv <- ggplot() +
   geom_ribbon(data = km,
               aes(x = time, ymin = cl_lower, ymax = cl_upper),
               alpha = 0.2, fill = "grey40") +
@@ -202,11 +202,13 @@ ggplot() +
                "Parametric (Weibull)"    = "steelblue")
   ) +
   labs(x = "Years since operation", y = "Survival probability") +
-  theme_hv_manuscript() +
-  theme(legend.position    = c(0.02, 0.02),
-        legend.justification = c(0, 0),
-        legend.background  = element_rect(fill = "white", colour = "grey80",
-                                          linewidth = 0.3))
+  theme_hv_manuscript()
+
+# Survival falls left-to-right, leaving the lower-left empty; hv_legend_inside()
+# anchors the key there automatically.
+hv_legend_inside(p_th_surv) +
+  theme(legend.background = element_rect(fill = "white", colour = "grey80",
+                                         linewidth = 0.3))
 ```
 
 Read the overlay as a fit check: where the smooth Weibull tracks the step
@@ -220,7 +222,7 @@ with the Nelson-Aalen estimate as the observed series.
 ```{r}
 #| label: fig-temporal_hazard-compare-cumhaz
 #| fig-cap: "Observed Nelson-Aalen cumulative hazard overlaid with the parametric Weibull curve"
-ggplot() +
+p_th_cumhaz <- ggplot() +
   geom_step(data = na,
             aes(x = time, y = cumhaz, colour = "Observed (Nelson-Aalen)"),
             linewidth = 0.7) +
@@ -233,11 +235,12 @@ ggplot() +
                "Parametric (Weibull)"    = "firebrick")
   ) +
   labs(x = "Years since operation", y = "Cumulative hazard") +
-  theme_hv_manuscript() +
-  theme(legend.position    = c(0.02, 0.98),
-        legend.justification = c(0, 1),
-        legend.background  = element_rect(fill = "white", colour = "grey80",
-                                          linewidth = 0.3))
+  theme_hv_manuscript()
+
+# Cumulative hazard rises left-to-right, leaving the upper-left empty.
+hv_legend_inside(p_th_cumhaz) +
+  theme(legend.background = element_rect(fill = "white", colour = "grey80",
+                                         linewidth = 0.3))
 ```
 
 ### Numbers at risk
