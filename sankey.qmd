@@ -100,7 +100,7 @@ plot(al_filled) +
   ) +
   labs(y = "Patients (n)",
        title = "AV Regurgitation: Pre- to Post-operative") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Read it
@@ -152,7 +152,7 @@ plot(al2) +
            size = 3.5, fontface = "italic") +
   labs(y = "Patients (n)",
        title = "AV Regurgitation Before and After Surgery") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 #### Milestone patient-flow with a clean y-axis
@@ -244,7 +244,7 @@ The constructor finds the `C2` through `C9` columns on its own, so the default
 build is a single call. It derives the node order from the data — seating each
 cluster next to the parent it splits from — so the flows stay uncrossed and no
 empty placeholder boxes appear, without you naming an order. We add a title and
-the poster theme; the Set1 palette gives each cluster letter its own colour.
+the manuscript theme; the Set1 palette gives each cluster letter its own colour.
 
 ```{r}
 #| label: fig-sankey
@@ -254,7 +254,7 @@ the poster theme; the Set1 palette gives each cluster letter its own colour.
 sk <- hv_sankey(dta_san)
 plot(sk) +
   labs(title = "Cluster Stability: K = 2 to 9") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Read it
@@ -294,7 +294,7 @@ my_cols <- c(
 sk_custom <- hv_sankey(dta_san, node_colours = my_cols)
 plot(sk_custom) +
   labs(title = "Cluster Stability: K = 2 to 9") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 #### Subset of K values
@@ -312,7 +312,7 @@ read in print.
 sk_sub <- hv_sankey(dta_san, cluster_cols = paste0("C", 2:6))
 plot(sk_sub) +
   labs(title = "Cluster Stability: K = 2 to 6") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 #### Milestone labels under the K axis
@@ -337,7 +337,7 @@ plot(
   label_alpha  = 0.3
 ) +
   labs(title = "Cluster Stability with group-count milestones") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 The flow geometry is unchanged; only the x-axis gains the annotations under the
