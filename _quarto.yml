@@ -4,6 +4,7 @@ project:
 
 book:
   title: "HVTI ggplot graphics recipes"
+  subtitle: "Version 2.1"
   author: "John Ehrlinger <ehrlinj@ccf.org>"
   date: today
   page-navigation: true
