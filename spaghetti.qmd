@@ -157,7 +157,7 @@ the key inside the panel.
 ```{r}
 #| label: fig-spaghetti-legend
 #| fig-cap: "Patient trajectories and a LOESS trend on one panel, with a legend naming the two series"
-ggplot(dta_sp, aes(x = time, y = value)) +
+p_sp <- ggplot(dta_sp, aes(x = time, y = value)) +
   geom_line(aes(group = id, colour = "Patient trajectories"),
             linewidth = 0.3, alpha = 0.4) +
   geom_smooth(aes(colour = "LOESS trend"),
@@ -169,11 +169,13 @@ ggplot(dta_sp, aes(x = time, y = value)) +
   scale_x_continuous(breaks = seq(0, 5, 1)) +
   coord_cartesian(xlim = c(0, 5), ylim = c(0, 80)) +
   labs(x = "Years", y = "AV Mean Gradient (mmHg)") +
-  theme_hv_manuscript() +
-  theme(legend.position    = c(0.98, 0.98),
-        legend.justification = c(1, 1),
-        legend.background  = element_rect(fill = "white", colour = "grey80",
-                                          linewidth = 0.3))
+  theme_hv_manuscript()
+
+# hv_legend_inside() picks the emptiest corner automatically (here, top-right);
+# the background box keeps the key legible over the trajectories.
+hv_legend_inside(p_sp) +
+  theme(legend.background = element_rect(fill = "white", colour = "grey80",
+                                         linewidth = 0.3))
 ```
 
 Without the key a reader cannot be sure the bold curve is a fitted trend and not
