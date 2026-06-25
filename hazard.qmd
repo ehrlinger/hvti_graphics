@@ -322,7 +322,7 @@ np_grp <- hv_nonparametric(
   data_points = pts_grp
 )
 
-plot(np_grp) +
+p_haz_grp <- plot(np_grp) +
   scale_colour_manual(
     values = c("Ozaki" = "steelblue", "CE-Pericardial" = "firebrick"),
     name   = NULL
@@ -333,8 +333,9 @@ plot(np_grp) +
   ) +
   scale_x_continuous(limits = c(0, 7), breaks = 0:7) +
   labs(x = "Follow-up (years)", y = "AV Peak Gradient (mmHg)") +
-  theme_hv_manuscript() +
-  theme(legend.position = c(0.15, 0.85))
+  theme_hv_manuscript()
+
+hv_legend_inside(p_haz_grp)
 ```
 
 ### Nonparametric ordinal-outcome curve

@@ -79,8 +79,8 @@ plot(lc)
 That is the raw grouped bar chart: paired bars at each follow-up window, no fill
 colours, no axis range, no theme. Now layer on the house style. We give the two
 series distinct fills, expand the y-axis with `coord_cartesian()` so the tallest
-bar has headroom, and tuck the legend into the upper-right corner where the bars
-are short.
+bar has headroom, and let `hv_legend_inside()` drop the legend into the empty
+upper-right corner where the bars are short.
 
 ```{r}
 #| label: fig-bar
@@ -96,10 +96,9 @@ p_lc_bar <- plot(lc) +
   ) +
   ggplot2::coord_cartesian(ylim = c(0, 2200)) +
   ggplot2::labs(x = NULL, y = "Count (n)") +
-  theme_hv_manuscript() +
-  ggplot2::theme(legend.position = c(0.85, 0.85))
+  theme_hv_manuscript()
 
-p_lc_bar
+hv_legend_inside(p_lc_bar)
 ```
 
 ## Read it
