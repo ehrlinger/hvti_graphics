@@ -111,7 +111,7 @@ sub-panels at once.
 #| fig-width: 9
 #| fig-height: 5
 plot(hu) &
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Read it
@@ -152,7 +152,7 @@ just the intersection-bar ggplot, which you then finish with the usual `+`.
 #| fig-height: 5
 plot(hu, bar_fill = "steelblue", set_size = FALSE) +
   ggplot2::labs(y = "Patients (n)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Colour bars by era
@@ -176,13 +176,13 @@ plot(hu_era, fill_col = "era", set_size = FALSE) +
     name   = "Era"
   ) +
   ggplot2::labs(y = "Patients (n)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Pitfalls
 
 - **Theming the wrong way for the wrong object.** When `set_size = TRUE` (the
-  default) the plot is a patchwork composite, and `+ theme_hv_poster()` styles
+  default) the plot is a patchwork composite, and `+ theme_hv_manuscript()` styles
   only one sub-panel, leaving the sidebar mismatched. Use `&` for the composite
   and `+` only when you have set `set_size = FALSE`.
 - **Reading the top-ten cutoff as the whole story.** The default shows the ten

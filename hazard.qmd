@@ -70,7 +70,7 @@ plot(hv_hazard(
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20),
                      labels = function(x) paste0(x, "%")) +
   labs(x = "Years", y = "Survival (%)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Read it
@@ -114,7 +114,7 @@ plot(hv_hazard(
   scale_y_continuous(limits = c(0, 30),
                      labels = function(x) paste0(x, "%/yr")) +
   labs(x = "Years", y = "Hazard (%/year)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Cumulative hazard
@@ -137,7 +137,7 @@ plot(hv_hazard(
   scale_fill_manual(values = c("darkorange"), guide = "none") +
   scale_x_continuous(limits = c(0, 10), breaks = 0:10) +
   labs(x = "Years", y = "Cumulative Hazard (%)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Stratified by group
@@ -180,7 +180,7 @@ plot(hv_hazard(
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20),
                      labels = function(x) paste0(x, "%")) +
   labs(x = "Years after Surgery", y = "Survival (%)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Population life-table overlay
@@ -236,7 +236,7 @@ plot(hv_hazard(
                      labels = function(x) paste0(x, "%")) +
   labs(x = "Years", y = "Survival (%)",
        caption = "Dashed lines: US population life table") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Nonparametric temporal-trend curve
@@ -293,7 +293,7 @@ plot(np) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
                      labels = scales::percent) +
   labs(x = "Follow-up (years)", y = "Prevalence (%)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 Pass `group_col` to the constructor to compare two average curves in a single
@@ -333,7 +333,7 @@ plot(np_grp) +
   ) +
   scale_x_continuous(limits = c(0, 7), breaks = 0:7) +
   labs(x = "Follow-up (years)", y = "AV Peak Gradient (mmHg)") +
-  theme_hv_poster() +
+  theme_hv_manuscript() +
   theme(legend.position = c(0.15, 0.85))
 ```
 
@@ -380,7 +380,7 @@ plot(np_ord) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
                      labels = scales::percent) +
   labs(x = "Follow-up (years)", y = "Grade prevalence (%)") +
-  theme_hv_poster() +
+  theme_hv_manuscript() +
   theme(legend.position = c(0.75, 0.6))
 ```
 
@@ -402,7 +402,7 @@ plot(hv_ordinal(curve_data = ord_two)) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
                      labels = scales::percent) +
   labs(x = "Follow-up (years)", y = "Grade prevalence (%)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Pitfalls

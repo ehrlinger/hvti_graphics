@@ -57,9 +57,8 @@ plot(km)
 
 Then layer on the house style. The pattern below is the one we use most often in
 CORR: a single steelblue for a one-cohort figure, percent labels on the y-axis,
-an `n =` callout in the lower-left, and a poster-sized theme. Swap
-`theme_hv_poster()` for `theme_hv_manuscript()` when you want the journal
-version.
+an `n =` callout in the lower-left, and the manuscript theme. Swap in
+`theme_hv_poster()` when you want the larger, poster-sized text.
 
 ```{r}
 #| label: fig-survival
@@ -75,7 +74,7 @@ plot(km, alpha = 0.8) +
        title = "Overall Survival") +
   annotate("text", x = 1, y = 5, label = paste0("n = ", nrow(dta_km)),
            hjust = 0, size = 3.5) +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Read it
@@ -165,7 +164,7 @@ plot(km_s, alpha = 0.8) +
   coord_cartesian(xlim = c(0, 20), ylim = c(0, 100)) +
   labs(x = "Years after Operation", y = "Freedom from Death (%)",
        title = "Survival by Valve Type") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Cumulative hazard
@@ -182,7 +181,7 @@ plot(km, type = "cumhaz") +
   labs(x = "Years after Operation", y = "Cumulative Hazard H(t)",
        title = "Nelson-Aalen Cumulative Hazard") +
   scale_color_manual(values = c(All = "steelblue"), guide = "none") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Hazard rate
@@ -201,7 +200,7 @@ plot(km, type = "hazard") +
   scale_x_continuous(breaks = seq(0, 20, 5)) +
   labs(x = "Years after Operation", y = "Instantaneous Hazard",
        title = "Hazard Rate") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Log-log survival (proportional-hazards check)
@@ -221,7 +220,7 @@ plot(km_s, type = "loglog") +
   ) +
   labs(x = "log(Years after Operation)", y = "log(-log S(t))",
        title = "Log-Log Survival") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ### Integrated life table (restricted mean survival)
@@ -241,7 +240,7 @@ plot(km, type = "life") +
   labs(x = "Years after Operation",
        y = "Restricted Mean Survival (years)",
        title = "Integral of Survivorship") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Pitfalls

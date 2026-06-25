@@ -86,11 +86,11 @@ plot(hv_eda(dta_eda, x_col = "op_years", y_col = "ef",
   scale_y_continuous(limits = c(20, 80), breaks = seq(20, 80, 20)) +
   labs(x = "Years from First Surgery Year",
        caption = "Tick marks on x-axis: observations with missing EF") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
-Swap `theme_hv_poster()` for `theme_hv_manuscript()` when you want the journal
-version at smaller text sizes.
+Swap in `theme_hv_poster()` when you want the larger, poster-sized text for
+arm's-length reading.
 
 ## Read it
 
@@ -131,7 +131,7 @@ plot(hv_eda(dta_eda, x_col = "op_years", y_col = "ef",
   scale_y_continuous(limits = c(20, 80), breaks = seq(20, 80, 20)) +
   labs(x = "Years from First Surgery Year",
        y = "Ejection Fraction (%)") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Pitfalls

@@ -113,7 +113,7 @@ plot(cb, alpha = 0.8) +
 ```
 
 For a finished figure, place the legend and direction-of-imbalance labels inside
-the panel and switch on the poster theme. `annotate()` puts text at chosen data
+the panel and switch on the manuscript theme. `annotate()` puts text at chosen data
 coordinates, here at the far left and far right rows, so the reader knows which
 direction favours which group. `n_vars` reads the covariate count off the data
 so the top annotation lands on the top row no matter how many covariates you
@@ -141,7 +141,7 @@ cb_final <- plot(cb, alpha = 0.8) +
   annotate("text", x = -30, y = 0,      label = "More likely TF-TAVR", size = 4.5) +
   annotate("text", x =  22, y = n_vars, label = "More likely SAVR",    size = 4.5) +
   theme(legend.position = c(0.20, 0.935)) +
-  theme_hv_poster()
+  theme_hv_manuscript()
 
 cb_final
 ```
@@ -184,7 +184,7 @@ plot(cb_ord, alpha = 0.8) +
     name   = NULL
   ) +
   labs(x = "Standardized difference (%)", y = "") +
-  theme_hv_poster()
+  theme_hv_manuscript()
 ```
 
 ## Goodness-of-follow-up plots
