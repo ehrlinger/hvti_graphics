@@ -118,7 +118,7 @@ modest evaluation grid (`n_eval`) to keep the render quick.
 #| fig-cap: "Partial dependence for bilirubin at the median follow-up: the adjusted dose-response curve with the other predictors averaged out"
 gg_p <- gg_partial_rfsrc(rf, xvar.names = "bili",
                          partial.time = t_eval, n_eval = 25)
-plot(gg_p) + theme_hv_manuscript()
+plot(gg_p) + geom_point() + theme_hv_manuscript()
 ```
 
 The partial-dependence curve is the adjusted version of the bilirubin panel
