@@ -66,7 +66,8 @@ logit-transformed band `cl_lower`/`cl_upper`, and the derived `cumhaz`,
 `hazard`, `density`, and `life`.
 
 ```{r}
-#| label: km
+#| label: fig-temporal_hazard-km
+#| fig-cap: "Empirical Kaplan-Meier survival for the cabgkul cohort with its logit-transformed confidence band"
 km <- hzr_kaplan(cabgkul$int_dead, cabgkul$dead)
 head(km)
 
@@ -86,7 +87,8 @@ slope at any point *is* the instantaneous hazard, which is what the parametric
 fit below will try to summarise.
 
 ```{r}
-#| label: nelson
+#| label: fig-temporal_hazard-nelson
+#| fig-cap: "Empirical Nelson-Aalen cumulative hazard for the cabgkul cohort with lognormal confidence limits"
 na <- hzr_nelson(cabgkul$int_dead, cabgkul$dead)
 head(na)
 
@@ -143,7 +145,8 @@ The fitted model gives us a smooth survival curve, its cumulative hazard, and
 the instantaneous hazard rate, one panel each.
 
 ```{r}
-#| label: predict-survival
+#| label: fig-temporal_hazard-parametric-survival
+#| fig-cap: "Parametric Weibull survival curve from the fitted model"
 ggplot(pred, aes(x = time, y = survival)) +
   geom_line(colour = "steelblue", linewidth = 0.8) +
   labs(x = "Years since operation", y = "Survival probability",
@@ -152,7 +155,8 @@ ggplot(pred, aes(x = time, y = survival)) +
 ```
 
 ```{r}
-#| label: predict-cumhaz
+#| label: fig-temporal_hazard-parametric-cumhaz
+#| fig-cap: "Parametric Weibull cumulative hazard from the fitted model"
 ggplot(pred, aes(x = time, y = cumhaz)) +
   geom_line(colour = "firebrick", linewidth = 0.8) +
   labs(x = "Years since operation", y = "Cumulative hazard",
@@ -161,7 +165,8 @@ ggplot(pred, aes(x = time, y = cumhaz)) +
 ```
 
 ```{r}
-#| label: predict-hazard
+#| label: fig-temporal_hazard-parametric-hazard
+#| fig-cap: "Instantaneous hazard rate derived by differencing the parametric Weibull cumulative hazard"
 ggplot(subset(pred, !is.na(hazard)), aes(x = time, y = hazard)) +
   geom_line(colour = "darkgreen", linewidth = 0.8) +
   labs(x = "Years since operation", y = "Instantaneous hazard rate",
@@ -179,7 +184,8 @@ and we place it inside the panel in the empty corner so it names the curves
 without covering them.
 
 ```{r}
-#| label: compare-survival
+#| label: fig-temporal_hazard
+#| fig-cap: "Observed Kaplan-Meier survival overlaid with the parametric Weibull curve as a fit check"
 ggplot() +
   geom_ribbon(data = km,
               aes(x = time, ymin = cl_lower, ymax = cl_upper),
@@ -212,7 +218,8 @@ a point curve with no interval.) The same overlay works for cumulative hazard,
 with the Nelson-Aalen estimate as the observed series.
 
 ```{r}
-#| label: compare-cumhaz
+#| label: fig-temporal_hazard-compare-cumhaz
+#| fig-cap: "Observed Nelson-Aalen cumulative hazard overlaid with the parametric Weibull curve"
 ggplot() +
   geom_step(data = na,
             aes(x = time, y = cumhaz, colour = "Observed (Nelson-Aalen)"),
@@ -241,7 +248,8 @@ subject-level data directly — the `time` and `status` columns — and compose 
 table under the curve, aligned to its ticks.
 
 ```{r}
-#| label: th_atrisk
+#| label: fig-temporal_hazard-atrisk
+#| fig-cap: "Kaplan-Meier survival with a numbers-at-risk table rebuilt from the subject-level data and composed beneath"
 #| fig-height: 5
 curve_km <- ggplot(km, aes(x = time, y = survival)) +
   geom_ribbon(aes(ymin = cl_lower, ymax = cl_upper),
@@ -313,7 +321,8 @@ Read them as a pair: the two cumulative incidence curves climb toward a shared
 ceiling, and the gap between them is the relative burden of each cause.
 
 ```{r}
-#| label: cr-plot
+#| label: fig-temporal_hazard-competing-risks
+#| fig-cap: "Competing-risks cumulative incidence for thromboembolic events and death in the omc cohort"
 cif <- data.frame(
   time      = rep(cr$time, 2),
   incidence = c(cr$incid_1, cr$incid_2),
@@ -350,7 +359,8 @@ visual check. Where the two curves sit on top of each other the Weibull is
 faithful; where they peel apart it is missing structure in the data.
 
 ```{r}
-#| label: gof-plot
+#| label: fig-temporal_hazard-gof
+#| fig-cap: "Goodness-of-fit overlay of parametric and Kaplan-Meier survival on the same panel"
 gof_long <- data.frame(
   time     = rep(gof$time, 2),
   survival = c(gof$km_surv, gof$par_surv),
@@ -370,7 +380,8 @@ the model is reproducing the actual event count over time, not just the shape of
 the curve.
 
 ```{r}
-#| label: gof-oe
+#| label: fig-temporal_hazard-gof-oe
+#| fig-cap: "Cumulative observed versus expected events, the survival analogue of a calibration plot"
 oe <- data.frame(
   time   = rep(gof$time, 2),
   events = c(gof$cum_observed, gof$cum_expected),
@@ -392,7 +403,8 @@ worked example; against a real risk score the same plot tells you whether
 predicted and observed risk agree across the range.
 
 ```{r}
-#| label: calibrate
+#| label: fig-temporal_hazard-calibrate
+#| fig-cap: "Observed event probability across follow-up-time deciles from hzr_calibrate()"
 cal <- hzr_calibrate(cabgkul$int_dead, cabgkul$dead, groups = 10)
 cal
 

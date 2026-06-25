@@ -113,7 +113,8 @@ makes the left panel twice as wide as the right, which suits the balance plot's
 long labels. `heights` does the same for stacked layouts.
 
 ```{r}
-#| label: combo_layout
+#| label: fig-combination-layout
+#| fig-cap: "Two-panel composite with the balance panel set twice as wide as the survival panel to fit its long covariate labels"
 #| fig-width: 10
 (p_cb | p_km) +
   plot_layout(widths = c(2, 1))   # left panel twice as wide as right
@@ -128,7 +129,8 @@ ggplot text panel from it and stack with `/`. The `plot_layout(heights = ...)`
 keeps the table strip short.
 
 ```{r}
-#| label: combo_risk_table
+#| label: fig-combination-risk-table
+#| fig-cap: "Survival curve stacked above its numbers-at-risk strip, the two panels sharing a common x-axis"
 #| fig-height: 5
 risk_df <- km$tables$risk
 
@@ -155,7 +157,8 @@ operator applies a `theme()` to every panel at once, so you format the tags in
 one place rather than per panel.
 
 ```{r}
-#| label: combo_annotation
+#| label: fig-combination
+#| fig-cap: "Finished combination figure pairing the covariate balance and survival panels with a shared title and A, B panel tags"
 #| fig-width: 10
 (p_cb | p_km) +
   plot_annotation(

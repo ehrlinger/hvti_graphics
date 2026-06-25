@@ -51,7 +51,8 @@ The NNT curve takes the pre-computed estimate and its CI columns directly. The
 default `estimate_col` is `"nnt"`, so you need only name the CI bounds.
 
 ```{r}
-#| label: nnt_curve
+#| label: fig-nnt
+#| fig-cap: "Number needed to treat over follow-up with its confidence band, falling as the survival gap widens"
 plot(hv_nnt(
   nnt_dat,
   lower_col = "nnt_lower",
@@ -92,7 +93,8 @@ count. Show whichever frames your benefit most honestly; show both if a reviewer
 asks.
 
 ```{r}
-#| label: nnt_arr
+#| label: fig-nnt-arr
+#| fig-cap: "Absolute risk reduction over follow-up, the reciprocal of NNT, rising as the benefit accumulates"
 plot(hv_nnt(
   nnt_dat,
   estimate_col = "arr",
@@ -132,7 +134,8 @@ the benefit at each time, and the moment the lower edge of the band clears zero
 is when the benefit becomes statistically convincing.
 
 ```{r}
-#| label: surv_diff_plot
+#| label: fig-nnt-survival-difference
+#| fig-cap: "Survival difference between two groups over time with its confidence band and a dashed no-benefit baseline"
 plot(hv_survival_difference(
   diff_dat,
   lower_col = "diff_lower",
@@ -157,7 +160,8 @@ that sit highest and clear zero earliest are the comparisons with the strongest
 benefit.
 
 ```{r}
-#| label: surv_diff_multi
+#| label: fig-nnt-survival-difference-multi
+#| fig-cap: "Several two-group survival differences overlaid in one panel, one line per contrast against a shared reference arm"
 d1 <- sample_survival_difference_data(
   groups = c("Medical Mgmt" = 1.0, "TF-TAVR" = 0.70), seed = 1L
 )

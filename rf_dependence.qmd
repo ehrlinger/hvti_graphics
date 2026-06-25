@@ -70,7 +70,8 @@ out side by side. Each point is one patient and the blue curve is a loess smooth
 through the cloud.
 
 ```{r}
-#| label: gg-variable
+#| label: fig-rf_dependence
+#| fig-cap: "Variable dependence for bilirubin, age, and albumin: predicted survival at the median follow-up against each patient's predictor value, with a loess smooth through the cloud"
 #| fig-height: 4
 gg_v <- gg_variable(rf)
 plot(gg_v, xvar = c("bili", "age", "albumin"), time = t_eval,
@@ -90,11 +91,12 @@ The two plots answer different questions, and reading them well means keeping
 the difference straight.
 
 - **Variable dependence shows the raw trend, confounding and all.** The
-  bilirubin panel above mixes bilirubin's own effect with the fact that
+  bilirubin panel in @fig-rf_dependence mixes bilirubin's own effect with the fact that
   high-bilirubin patients also tend to differ in age, albumin, and the rest. The
   scatter tells you how tight the relationship is once you account for that
   spread.
-- **Partial dependence shows the adjusted trend.** The plot below holds the
+- **Partial dependence shows the adjusted trend.** The partial-dependence plot
+  (@fig-rf_dependence-partial) holds the
   other predictors at their observed distribution and varies bilirubin alone, so
   the curve is bilirubin's marginal effect with the other variables averaged out.
   When the two plots disagree, the gap is the confounding.
@@ -112,14 +114,15 @@ the slow step, so we restrict it to a single variable at the median time and a
 modest evaluation grid (`n_eval`) to keep the render quick.
 
 ```{r}
-#| label: gg-partial
+#| label: fig-rf_dependence-partial
+#| fig-cap: "Partial dependence for bilirubin at the median follow-up: the adjusted dose-response curve with the other predictors averaged out"
 gg_p <- gg_partial_rfsrc(rf, xvar.names = "bili",
                          partial.time = t_eval, n_eval = 25)
 plot(gg_p) + theme_hv_manuscript()
 ```
 
 The partial-dependence curve is the adjusted version of the bilirubin panel
-above: the same downward trend, but now free of the influence of age, albumin,
+in @fig-rf_dependence: the same downward trend, but now free of the influence of age, albumin,
 and the rest. The flat scatter has collapsed into a single, interpretable
 dose-response line, the cleanest summary of how bilirubin moves predicted
 survival.

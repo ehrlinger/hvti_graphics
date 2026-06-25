@@ -1,4 +1,4 @@
-# Specialty Plots
+# Specialty plots {.unnumbered}
 
 Most of the figures so far map a variable or two onto a familiar geom. The ones
 in this part are different: each answers a specific question we get asked of a

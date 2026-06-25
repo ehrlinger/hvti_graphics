@@ -1,4 +1,4 @@
-# Getting Started
+# Getting started {.unnumbered}
 
 Before the figures, a little groundwork. This part covers the packages we reach
 for and the small set of conventions that keep the recipes consistent: how we

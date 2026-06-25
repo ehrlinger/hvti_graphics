@@ -1,0 +1,22 @@
+# Time-to-event figures {.unnumbered}
+
+The catalog opens here because this is most of what we publish. Cardiac-surgery
+outcomes are almost always time-to-event questions -- freedom from reoperation,
+survival after a valve repair, the cumulative risk of a complication over years
+of follow-up -- so the survival family earns the front of the book.
+
+Each chapter takes one view of the same kind of data, a follow-up time and an
+event indicator, and answers a different question with it. The Kaplan-Meier
+curve, with its numbers-at-risk table, is the workhorse for showing how a group
+survives over time. Hazard curves read the same data as an instantaneous rate
+rather than a running total, and the temporal-hazard plot shows how that rate
+rises or falls across the follow-up window. The number-needed-to-treat chapter
+closes the part by turning an effect size into the single count a clinician acts
+on. Every recipe builds its own sample cohort, so you can run it before pointing
+it at your own data.
+
+When a Cox model is too rigid for your data -- when a predictor's effect bends,
+or depends on the patient it acted on -- a survival random forest can find that
+structure without you specifying it up front. The
+[*Random forests & model visualization*](randomforests.qmd) part, later in the
+book, fits one and reads the same time-to-event question off it.

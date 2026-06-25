@@ -1,4 +1,4 @@
-# Bar Chart Plots
+# Bar chart plots
 
 ```{r}
 #| label: setup
@@ -83,7 +83,8 @@ bar has headroom, and tuck the legend into the upper-right corner where the bars
 are short.
 
 ```{r}
-#| label: lc_bar
+#| label: fig-bar
+#| fig-cap: "Grouped bar chart of patient and measurement counts at each follow-up window"
 p_lc_bar <- plot(lc) +
   ggplot2::scale_fill_manual(
     values = c(Patients = "steelblue", Measurements = "firebrick"),
@@ -132,7 +133,8 @@ count them. The `y_label` argument sets the title and fill-legend name in place
 of the raw column name. Here, sex by surgery year.
 
 ```{r}
-#| label: eda_binary_count
+#| label: fig-bar-binary-count
+#| fig-cap: "Count bars of a binary categorical variable by surgery year, with missing values kept as an explicit level"
 plot(hv_eda(dta_eda, x_col = "year", y_col = "male",
             y_label = "Sex")) +
   scale_fill_manual(
@@ -154,7 +156,8 @@ category. This is the version to use when annual cohort sizes vary a lot and a
 raw count would tell you more about volume than about case mix.
 
 ```{r}
-#| label: eda_binary_percent
+#| label: fig-bar-binary-percent
+#| fig-cap: "Percentage bars of a binary categorical variable by year, with each bar filling the full height to show case mix"
 plot(hv_eda(dta_eda, x_col = "year", y_col = "cabg",
             y_label = "Concomitant CABG", show_percent = TRUE)) +
   scale_fill_manual(
@@ -177,7 +180,8 @@ green at the mild end through yellow to red at the severe end, so the reader
 sees worsening case mix without reading the legend.
 
 ```{r}
-#| label: eda_ordinal
+#| label: fig-bar-ordinal
+#| fig-cap: "Stacked count bars of an ordinal NYHA class by year, with a diverging palette carrying the severity ordering"
 plot(hv_eda(dta_eda, x_col = "year", y_col = "nyha",
             y_label = "Preoperative NYHA Class")) +
   scale_fill_brewer(
@@ -199,7 +203,8 @@ default rather than by an implied scale, so use `scale_fill_manual()` to assign
 colours that carry clinical meaning, here one hue per valve morphology type.
 
 ```{r}
-#| label: eda_char_cat
+#| label: fig-bar-char-cat
+#| fig-cap: "Stacked count bars of a character categorical variable by year, with one hue per valve morphology type"
 plot(hv_eda(dta_eda, x_col = "year", y_col = "valve_morph",
             y_label = "Valve Morphology")) +
   scale_fill_manual(
@@ -240,7 +245,8 @@ This is the figure you actually publish: the bars carry the visual story and the
 table gives the reader the exact counts.
 
 ```{r}
-#| label: lc_combined
+#| label: fig-bar-longitudinal-composite
+#| fig-cap: "Two-panel longitudinal display with the grouped bar chart above and the matching count table below"
 #| fig-height: 5
 p_lc_bar / p_lc_tbl +
   patchwork::plot_layout(heights = c(3, 1))

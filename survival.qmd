@@ -1,4 +1,4 @@
-# Survival Plots
+# Survival plots
 
 ```{r}
 #| label: setup
@@ -62,7 +62,8 @@ an `n =` callout in the lower-left, and a poster-sized theme. Swap
 version.
 
 ```{r}
-#| label: km_styled
+#| label: fig-survival
+#| fig-cap: "Kaplan-Meier overall survival for the simulated cohort, styled in the CORR house style with a logit-transform 95% confidence ribbon"
 plot(km, alpha = 0.8) +
   scale_color_manual(values = c(All = "steelblue"), guide = "none") +
   scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
@@ -109,7 +110,8 @@ beneath the time points they describe. Style the curve as usual, build the table
 from the same object, and compose the two.
 
 ```{r}
-#| label: km_atrisk
+#| label: fig-survival-atrisk
+#| fig-cap: "Survival curve with an aligned numbers-at-risk table composed beneath the time axis"
 #| fig-height: 5
 curve <- plot(km, alpha = 0.8) +
   scale_color_manual(values = c(All = "steelblue"), guide = "none") +
@@ -138,7 +140,8 @@ Look for clearly separated curves whose CI ribbons stop overlapping in the
 windows where the treatment difference matters.
 
 ```{r}
-#| label: km_strata
+#| label: fig-survival-strata
+#| fig-cap: "Stratified survival curves for a two-arm valve-type cohort simulated with a 1.4x hazard ratio"
 dta_km_s <- sample_survival_data(
   n             = 500,
   strata_levels = c("Type A", "Type B"),
@@ -172,7 +175,8 @@ plot(km_s, alpha = 0.8) +
 point is the instantaneous hazard rate. Same object, different `type`.
 
 ```{r}
-#| label: km_cumhaz
+#| label: fig-survival-cumhaz
+#| fig-cap: "Nelson-Aalen cumulative hazard, the monotonically non-decreasing complement of the survival curve"
 plot(km, type = "cumhaz") +
   scale_x_continuous(breaks = seq(0, 20, 5)) +
   labs(x = "Years after Operation", y = "Cumulative Hazard H(t)",
@@ -188,7 +192,8 @@ noisy, so for a figure overlay a LOESS smooth. The smoothed curve shows the
 early-risk peak and later plateau a reviewer is looking for.
 
 ```{r}
-#| label: km_hazard
+#| label: fig-survival-hazard
+#| fig-cap: "Instantaneous hazard rate with a LOESS smooth showing the early-risk peak and later plateau"
 plot(km, type = "hazard") +
   geom_smooth(aes(x = mid_time, y = hazard, color = strata),
               method = "loess", se = FALSE, span = 0.6) +
@@ -207,7 +212,8 @@ check before you quote a single hazard ratio. Fit with `group_col` so
 there are strata to compare.
 
 ```{r}
-#| label: km_loglog
+#| label: fig-survival-loglog
+#| fig-cap: "Log-log survival plot for checking the proportional-hazards assumption across strata"
 plot(km_s, type = "loglog") +
   scale_color_manual(
     values = c("Type A" = "steelblue", "Type B" = "firebrick"),
@@ -227,7 +233,8 @@ accumulate. RMST is the summary to reach for when the log-log check above shows
 hazards are *not* proportional and a single hazard ratio would mislead.
 
 ```{r}
-#| label: km_life
+#| label: fig-survival-life
+#| fig-cap: "Integrated survivorship, the restricted mean survival time accumulated up to each horizon"
 plot(km, type = "life") +
   scale_color_manual(values = c(All = "steelblue"), guide = "none") +
   scale_x_continuous(breaks = seq(0, 20, 5)) +

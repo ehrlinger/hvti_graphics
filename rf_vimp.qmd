@@ -67,7 +67,8 @@ least important. The `plot()` method draws a horizontal bar per predictor, so
 the ranking reads top to bottom.
 
 ```{r}
-#| label: gg-vimp
+#| label: fig-rf_vimp
+#| fig-cap: "Permutation variable importance for every predictor in the pbc survival forest, ranked from most to least important"
 plot(gg_vimp(rf)) + theme_hv_manuscript()
 ```
 
@@ -104,7 +105,8 @@ For a manuscript figure you rarely want every variable cluttering the panel. The
 the eye straight on the predictors that matter.
 
 ```{r}
-#| label: gg-vimp-top
+#| label: fig-rf_vimp-top
+#| fig-cap: "The same variable importance ranking restricted to the top ten predictors for a cleaner manuscript figure"
 plot(gg_vimp(rf, nvar = 10)) + theme_hv_manuscript()
 ```
 

@@ -1,4 +1,4 @@
-# Scatter Plots
+# Scatter plots
 
 ```{r}
 #| label: setup
@@ -77,7 +77,8 @@ axes to a sensible range, and add a caption that tells the reader what the
 x-axis ticks mean.
 
 ```{r}
-#| label: eda_continuous
+#| label: fig-scatter
+#| fig-cap: "Ejection fraction against years from first surgery, with a LOESS smoother and a rug of observations missing EF"
 plot(hv_eda(dta_eda, x_col = "op_years", y_col = "ef",
             y_label = "Ejection Fraction (%)")) +
   scale_colour_manual(values = c("firebrick"), guide = "none") +
@@ -120,7 +121,8 @@ a larger span gives a flatter, more conservative trend. When you are unsure
 whether a bump is real, compare two spans before you commit to a story.
 
 ```{r}
-#| label: eda_continuous_smooth
+#| label: fig-scatter-span
+#| fig-cap: "The same scatter with a narrower LOESS span (0.5), which follows local structure more closely than the default"
 plot(hv_eda(dta_eda, x_col = "op_years", y_col = "ef",
             y_label = "Ejection Fraction (%)"),
      smooth_method = "loess", smooth_span = 0.5) +

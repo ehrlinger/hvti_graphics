@@ -1,4 +1,4 @@
-# Box Plots
+# Box plots
 
 ```{r}
 #| label: setup
@@ -52,7 +52,8 @@ The grouped box plot is the base case: one box per level of the categorical
 variable, all on a shared y-axis.
 
 ```{r}
-#| label: box-grouped
+#| label: fig-boxplots
+#| fig-cap: "Box plot of a continuous measurement by group, showing the median, quartiles, whiskers, and outliers for each category"
 ggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +
   geom_boxplot() +
   labs(
@@ -102,7 +103,8 @@ points with a little horizontal jitter and low alpha so dense regions read as
 darker.
 
 ```{r}
-#| label: box-jitter
+#| label: fig-boxplots-jitter
+#| fig-cap: "Box plot with the raw observations jittered over each box, exposing the sample size and spread the summary hides"
 ggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.3, size = 0.7) +
@@ -126,7 +128,8 @@ proportional to the square root of its group size, so a thin box is a visual
 warning that it rests on few patients.
 
 ```{r}
-#| label: box-varwidth
+#| label: fig-boxplots-varwidth
+#| fig-cap: "Box plot with box width scaled to the square root of group size, flagging boxes that rest on few patients"
 ggplot(dat, aes(x = .data[[grp]], y = .data[[num]])) +
   geom_boxplot(varwidth = TRUE) +
   labs(
@@ -146,7 +149,8 @@ names the groups, the fill only reinforces them, so we drop the redundant legend
 with `guide = "none"` rather than spend panel space on it.
 
 ```{r}
-#| label: box-filled
+#| label: fig-boxplots-filled
+#| fig-cap: "Box plot with each box filled by group from a palette, with the redundant legend dropped"
 ggplot(dat, aes(x = .data[[grp]], y = .data[[num]], fill = .data[[grp]])) +
   geom_boxplot() +
   scale_fill_brewer(palette = "Set1", guide = "none") +

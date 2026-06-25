@@ -58,7 +58,8 @@ probability the model ranks a random pair of patients in the right order), so
 lower is better.
 
 ```{r}
-#| label: gg-error
+#| label: fig-rf_error
+#| fig-cap: "Out-of-bag error against the number of trees for a 100-tree survival forest, flattening well before the final tree"
 plot(gg_error(rf)) + theme_hv_manuscript()
 ```
 
@@ -94,13 +95,14 @@ curve never reaches a flat tail; it is still descending at the right edge, which
 is precisely the pattern that should send you back to a larger `ntree`.
 
 ```{r}
-#| label: gg-error-short
+#| label: fig-rf_error-short
+#| fig-cap: "Out-of-bag error for an undersized 25-tree forest, still descending at the right edge instead of flattening"
 rf_short <- rfsrc(Surv(time, status) ~ ., data = veteran, ntree = 25,
                   block.size = 1)
 plot(gg_error(rf_short)) + theme_hv_manuscript()
 ```
 
-Compare this to the 100-tree curve above. The shape, not the number on the axis,
+Compare this to the 100-tree curve in @fig-rf_error. The shape, not the number on the axis,
 is what tells you whether to grow more trees.
 
 ## Pitfalls

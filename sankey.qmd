@@ -73,7 +73,8 @@ diagram. The matching `scale_colour_manual()` (with `guide = "none"`) keeps the
 thin band outlines the same colour as their fill.
 
 ```{r}
-#| label: alluvial_filled
+#| label: fig-sankey-alluvial
+#| fig-cap: "Alluvial diagram tracing AR-grade transitions from before surgery, through procedure, to after, with bands coloured by pre-operative grade"
 al_filled <- hv_alluvial(dta_al, axes = axes, y_col = "freq",
                          fill_col = "pre_ar")
 
@@ -131,7 +132,8 @@ change directly on the panel. A diverging Brewer palette (`RdYlGn`, reversed)
 maps naturally onto an ordered grade where green is good.
 
 ```{r}
-#| label: alluvial_two_axis
+#| label: fig-sankey-alluvial-twoaxis
+#| fig-cap: "Two-axis alluvial comparing AR grade before and after surgery, with annotation marking the direction of improvement"
 al2 <- hv_alluvial(
   dta_al,
   axes        = c("pre_ar", "post_ar"),
@@ -166,7 +168,8 @@ the axes it would reinstate, so when you finish with `theme_hv_manuscript()` you
 blank the y elements again after it.
 
 ```{r}
-#| label: alluvial_milestones
+#| label: fig-sankey-alluvial-milestones
+#| fig-cap: "Milestone patient-flow alluvial across the mechanical circulatory support device course, with the count axis suppressed to emphasise pathway shape"
 #| fig-width: 8
 #| fig-height: 5
 set.seed(1)
@@ -244,7 +247,8 @@ empty placeholder boxes appear, without you naming an order. We add a title and
 the poster theme; the Set1 palette gives each cluster letter its own colour.
 
 ```{r}
-#| label: sankey_default
+#| label: fig-sankey
+#| fig-cap: "Cluster-stability Sankey tracing how patient assignments split across K = 2 through K = 9"
 #| fig-width: 8
 #| fig-height: 5
 sk <- hv_sankey(dta_san)
@@ -278,7 +282,8 @@ node labels (the cluster letters) in the data, so every letter from A through I
 needs an entry.
 
 ```{r}
-#| label: sankey_custom_cols
+#| label: fig-sankey-custom-cols
+#| fig-cap: "Cluster-stability Sankey with a custom named colour palette mapped to the cluster letters"
 #| fig-width: 8
 #| fig-height: 5
 my_cols <- c(
@@ -300,7 +305,8 @@ in a manuscript panel; trimming to K = 2 to 6 keeps the bands wide enough to
 read in print.
 
 ```{r}
-#| label: sankey_subset
+#| label: fig-sankey-subset
+#| fig-cap: "Cluster-stability Sankey trimmed to K = 2 through K = 6 to keep the bands legible in a manuscript panel"
 #| fig-width: 6
 #| fig-height: 5
 sk_sub <- hv_sankey(dta_san, cluster_cols = paste0("C", 2:6))
@@ -319,7 +325,8 @@ bare. `flow_alpha` and `label_alpha` set the band and box transparency if a dens
 panel needs a lighter touch.
 
 ```{r}
-#| label: sankey_milestones
+#| label: fig-sankey-milestones
+#| fig-cap: "Cluster-stability Sankey with group-count milestone labels printed beneath selected K columns"
 #| fig-width: 8
 #| fig-height: 5
 plot(

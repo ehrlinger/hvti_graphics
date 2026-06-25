@@ -59,7 +59,8 @@ On a regression fit the y-axis is the response in its own units. Here that is
 `SalePrice`, so each curve reads as dollars of sale price across the predictor.
 
 ```{r}
-#| label: partial-regression
+#| label: fig-varpro_partial
+#| fig-cap: "Partial-dependence curves for the top six predictors of the housing regression fit, plotted on the response scale in dollars of sale price"
 plot(gg_partial_varpro(object = o_reg, nvars = 6)) & theme_hv_manuscript()
 ```
 
@@ -73,7 +74,8 @@ A classification fit defaults to **probability** — `P(Y = the target class)`,
 bounded 0 to 1 and the scale a clinician expects.
 
 ```{r}
-#| label: partial-prob
+#| label: fig-varpro_partial-prob
+#| fig-cap: "Partial dependence for the breast classification fit on the probability scale, bounded zero to one"
 plot(gg_partial_varpro(object = o_cls, nvars = 6, scale = "prob")) &
   theme_hv_manuscript()
 ```
@@ -84,7 +86,8 @@ linear in the model's own terms and is the only scale on which the `causal`
 diagnose.
 
 ```{r}
-#| label: partial-logodds
+#| label: fig-varpro_partial-logodds
+#| fig-cap: "The same classification partial dependence on the log-odds scale, linear in the model's own terms and the only scale showing the causal contrast"
 plot(gg_partial_varpro(object = o_cls, nvars = 6, scale = "logodds")) &
   theme_hv_manuscript()
 ```
@@ -100,7 +103,8 @@ median follow-up, printed on the axis label (here `t = 1788`), so you get a
 units-safe horizon without guessing.
 
 ```{r}
-#| label: partial-surv
+#| label: fig-varpro_partial-surv
+#| fig-cap: "Partial dependence for the pbc survival fit on the survival-probability scale at the median follow-up horizon"
 plot(gg_partial_varpro(object = o_surv, nvars = 4, scale = "surv")) &
   theme_hv_manuscript()
 ```
@@ -111,7 +115,8 @@ higher-is-better. It answers "how much time does this variable buy?" rather than
 "what is the probability at `tau`."
 
 ```{r}
-#| label: partial-rmst
+#| label: fig-varpro_partial-rmst
+#| fig-cap: "Partial dependence for the pbc survival fit on the restricted-mean-survival-time scale, read as event-free time within the horizon"
 plot(gg_partial_varpro(object = o_surv, nvars = 4, scale = "rmst")) &
   theme_hv_manuscript()
 ```

@@ -53,7 +53,8 @@ its CI columns to draw the overlay. Start from the decorated version since the
 constructor has no separate bare mode here; the call below is the whole figure.
 
 ```{r}
-#| label: hazard_survival
+#| label: fig-hazard
+#| fig-cap: "Smooth parametric survival curve with its confidence band and overlaid binned Kaplan-Meier points with error bars"
 plot(hv_hazard(
   dat_hp,
   estimate_col  = "survival",
@@ -99,7 +100,8 @@ show when the question is *when* the risk is highest rather than *how many*
 survive.
 
 ```{r}
-#| label: hazard_rate
+#| label: fig-hazard-rate
+#| fig-cap: "Instantaneous hazard rate in percent per year, showing when post-operative risk is highest"
 plot(hv_hazard(
   dat_hp,
   estimate_col = "hazard",
@@ -123,7 +125,8 @@ and repeated-event analyses, where counting accumulated risk is more natural
 than reporting a survival fraction.
 
 ```{r}
-#| label: hazard_cumhaz
+#| label: fig-hazard-cumhaz
+#| fig-cap: "Cumulative hazard rising monotonically, with its slope giving the instantaneous hazard"
 plot(hv_hazard(
   dat_hp,
   estimate_col  = "cumhaz",
@@ -144,7 +147,8 @@ curve, band, and empirical overlay. Look for curves whose bands stop overlapping
 in the windows where the treatment difference matters.
 
 ```{r}
-#| label: hazard_stratified
+#| label: fig-hazard-stratified
+#| fig-cap: "Survival curves, bands, and empirical overlays for two groups in a single panel"
 dat_strat <- sample_hazard_data(
   n = 400, time_max = 10,
   groups = c("No Takedown" = 1.0, "Takedown" = 0.65)
@@ -188,7 +192,8 @@ group. The gap between a study curve and its dashed reference is the excess
 mortality attributable to the condition rather than to ageing.
 
 ```{r}
-#| label: hazard_lifetable
+#| label: fig-hazard-lifetable
+#| fig-cap: "Age-stratified study survival curves set against dashed population life-table references"
 dat_age <- sample_hazard_data(
   n = 600, time_max = 12,
   groups = c("<65" = 0.5, "65–80" = 1.0, "≥80" = 1.8)
@@ -264,7 +269,7 @@ np <- hv_nonparametric(
 
 The bare panel shows the average curve, its CI ribbon, and the binned summary
 points in default colours. Read it the same way you read the empirical overlay
-above: the curve should pass through the binned points, and the ribbon should
+in @fig-hazard: the curve should pass through the binned points, and the ribbon should
 widen at the extremes where the bootstrap sample thins. A flat curve where you
 expected a trend is a hint that the `outcome_type` or CI columns are
 misspecified.
@@ -278,7 +283,8 @@ The shaded ribbon here is the 68% bootstrap CI (one standard error); pass
 `ci_level = 0.95` to `sample_nonparametric_curve_data()` for 95% bands.
 
 ```{r}
-#| label: np_curve_single
+#| label: fig-hazard-nonparametric
+#| fig-cap: "Nonparametric temporal-trend curve with its 68% bootstrap confidence ribbon and binned summary points"
 plot(np) +
   scale_colour_manual(values = c("steelblue"), guide = "none") +
   scale_fill_manual(values   = c("steelblue"), guide = "none") +
@@ -294,7 +300,8 @@ Pass `group_col` to the constructor to compare two average curves in a single
 panel; each group gets its own CI ribbon.
 
 ```{r}
-#| label: np_curve_groups
+#| label: fig-hazard-nonparametric-groups
+#| fig-cap: "Two nonparametric average curves compared in one panel, each with its own bootstrap confidence ribbon"
 curve_grp <- sample_nonparametric_curve_data(
   n            = 400,
   time_max     = 7,
@@ -359,7 +366,8 @@ the severe line creeps up. Colours run from grey for None through graduated
 severity to firebrick for Severe so the eye reads worsening as warming.
 
 ```{r}
-#| label: np_ordinal_basic
+#| label: fig-hazard-ordinal
+#| fig-cap: "One probability curve per regurgitation grade over time, coloured from grey to firebrick as severity worsens"
 np_ord <- hv_ordinal(curve_data = ord_dat, data_points = ord_pts)
 
 plot(np_ord) +
@@ -381,7 +389,8 @@ and re-label before passing the data to the constructor. Here we show a
 two-grade version drawn from the same sample data.
 
 ```{r}
-#| label: np_ordinal_collapsed
+#| label: fig-hazard-ordinal-collapsed
+#| fig-cap: "Two-grade ordinal version with higher grades collapsed into a combined level"
 ord_two <- subset(ord_dat, grade %in% c("None", "Severe"))
 
 plot(hv_ordinal(curve_data = ord_two)) +

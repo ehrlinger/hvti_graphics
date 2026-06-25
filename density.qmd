@@ -1,4 +1,4 @@
-# Density Plots
+# Density plots
 
 ```{r}
 #| label: setup
@@ -54,7 +54,8 @@ Start with a single curve so you can see the estimate before any grouping. The
 block.
 
 ```{r}
-#| label: density-single
+#| label: fig-density
+#| fig-cap: "Kernel density estimate of a single continuous variable, scaled so the area under the curve is one"
 ggplot(dat, aes(x = .data[[num]])) +
   geom_density(fill = "grey70", alpha = 0.7) +
   labs(
@@ -99,7 +100,8 @@ comparison you actually want most of the time: not "what does this variable look
 like" but "does it look different across valve morphologies?"
 
 ```{r}
-#| label: density-grouped
+#| label: fig-density-grouped
+#| fig-cap: "Overlaid density curves by valve morphology, each normalised to area one so groups of different sizes compare on shape"
 ggplot(dat, aes(x = .data[[num]], fill = .data[[grp]])) +
   geom_density(alpha = 0.5) +
   labs(
@@ -122,7 +124,8 @@ The single most consequential knob is the bandwidth, passed through `adjust`
 the honest way to show how much of a bump is signal and how much is the smoother.
 
 ```{r}
-#| label: density-bandwidth
+#| label: fig-density-bandwidth
+#| fig-cap: "The same data drawn at a narrow and a wide bandwidth, showing how the smoothing choice shapes apparent structure"
 ggplot(dat, aes(x = .data[[num]])) +
   geom_density(aes(colour = "wiggly (adjust = 0.4)"),
                adjust = 0.4, fill = NA, linewidth = 0.8) +
@@ -148,7 +151,7 @@ the small bandwidth it is probably noise the smoother stopped hiding.
   structure, a second mode flattens into a shoulder. Too small a bandwidth
   invents structure, every cluster of three points becomes its own little peak.
   When a bump matters to your story, redraw it at a wider and a narrower
-  bandwidth before you commit, the way the variation above does.
+  bandwidth before you commit, the way @fig-density-bandwidth does.
 - **Treating a density like a histogram.** The y-axis is a density, not a count.
   A taller curve does not mean more patients; it means the data are more
   concentrated there. If the reader needs counts, draw a histogram or label the

@@ -1,4 +1,4 @@
-# Tables
+# Tables {.unnumbered}
 
 A figure rarely travels alone. The survival curve wants its numbers at risk, the
 manuscript wants its Table 1, and the trend plot reads better next to the counts
