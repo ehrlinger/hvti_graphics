@@ -64,7 +64,8 @@ it takes a *numeric index*, not the level name: `2` selects the second level,
 `pos`. Pass the string `"pos"` and the call errors with "subscript out of bounds".
 
 ```{r}
-#| label: gg-roc
+#| label: fig-rf_roc
+#| fig-cap: "Out-of-bag ROC curve for the Pima diabetes classification forest, treating a positive diagnosis as the event, with the AUC printed on the panel"
 plot(gg_roc(rf, which_outcome = 2)) + theme_hv_manuscript()
 ```
 
@@ -85,7 +86,8 @@ quantifies that gap.
   nothing about whether a predicted 0.8 actually happens 80% of the time. That is
   calibration, and it is what the Brier score checks. A forest can rank well (high
   AUC) yet be poorly calibrated, so read both.
-- **Read per-class curves against each other.** In the multi-class plot below,
+- **Read per-class curves against each other.** In the multi-class plot
+  (@fig-rf_roc-multiclass),
   the class whose curve sags closest to the diagonal is the one the forest finds
   hardest to separate from the rest. That is usually the more informative finding
   than the overall headline number.
@@ -100,7 +102,8 @@ flag does this in a single call. We illustrate on `iris`, where the three
 species give three curves.
 
 ```{r}
-#| label: gg-roc-iris
+#| label: fig-rf_roc-multiclass
+#| fig-cap: "One-vs-rest ROC curves for the three iris species, one curve per class treated as positive in turn"
 rf_iris <- rfsrc(Species ~ ., data = iris, ntree = 100)
 plot(gg_roc(rf_iris, which_outcome = 1, per_class = TRUE)) +
   theme_hv_manuscript()
@@ -119,7 +122,8 @@ as a survival forest and plot the integrated Brier score over follow-up time,
 the survival analogue of the calibration check we want for classification.
 
 ```{r}
-#| label: gg-brier
+#| label: fig-rf_roc-brier
+#| fig-cap: "Integrated Brier score over follow-up time for a pbc survival forest, where lower curves mean better-calibrated predictions"
 data(pbc, package = "randomForestSRC")
 rf_surv <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100)
 plot(gg_brier(rf_surv)) + theme_hv_manuscript()

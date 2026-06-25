@@ -89,7 +89,8 @@ column becomes a side box; pass a character vector to `side_box` if you want to
 show only some of them.
 
 ```{r}
-#| label: consort_plot
+#| label: fig-consort
+#| fig-cap: "CONSORT patient-flow diagram tracing a cardiac-surgery cohort from screening through exclusions to the analysed set"
 fig <- hv_consort(tracker)
 plot(fig)
 ```

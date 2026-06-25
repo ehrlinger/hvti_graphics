@@ -65,7 +65,8 @@ Default for journal submissions — white background, black text, minimal chrome
 Font sizes tuned for letter-size PDFs reduced to a column width.
 
 ```{r}
-#| label: manuscript
+#| label: fig-themes
+#| fig-cap: "Grouped trends plot under theme_hv_manuscript(), the journal default with white background and minimal chrome"
 decorate(p_base) + theme_hv_manuscript()
 ```
 
@@ -75,7 +76,8 @@ Larger axis text and tick weights, panel grid removed: reads at arm's length
 on a foam board, and holds up on a projector.
 
 ```{r}
-#| label: poster
+#| label: fig-themes-poster
+#| fig-cap: "The same plot under theme_hv_poster(), with larger axis text and heavier tick weights for arm's-length reading"
 decorate(p_base) + theme_hv_poster()
 ```
 
@@ -85,7 +87,8 @@ Dark text and lines for white or light-grey slide backgrounds: the Cleveland
 Clinic standard template and most default Office decks.
 
 ```{r}
-#| label: ppt_light
+#| label: fig-themes-ppt-light
+#| fig-cap: "The same plot under theme_hv_ppt_light(), with dark text and lines for white or light-grey slide backgrounds"
 decorate(p_base) + theme_hv_ppt_light()
 ```
 
@@ -97,7 +100,8 @@ override below simulates that navy in this rendered book and would be omitted
 when saving to an actual `.pptx`.
 
 ```{r}
-#| label: ppt_dark
+#| label: fig-themes-ppt-dark
+#| fig-cap: "The same plot under theme_hv_ppt_dark(), with white-on-dark styling for navy or dark-gradient decks"
 decorate(p_base) +
   theme_hv_ppt_dark() +
   theme(plot.background = element_rect(fill = "navy", colour = "navy"))

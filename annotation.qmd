@@ -42,7 +42,8 @@ km     <- hv_survival(dta_km)
 on the rendered plot so they can be overridden per project.
 
 ```{r}
-#| label: labs
+#| label: fig-annotation
+#| fig-cap: "Overall survival curve with axis labels, percent-formatted y-axis, and a statistical caption applied via labs()"
 plot(km) +
   scale_color_manual(values = c(All = "steelblue"), guide = "none") +
   scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
@@ -65,7 +66,8 @@ plot(km) +
 a sample-size callout in a corner, or an arrow pointing to an event.
 
 ```{r}
-#| label: annotate
+#| label: fig-annotation-callout
+#| fig-cap: "Survival curve with an in-panel sample-size callout and an arrow annotation marking median survival"
 plot(km) +
   scale_color_manual(values = c(All = "steelblue"), guide = "none") +
   scale_fill_manual(values  = c(All = "steelblue"), guide = "none") +
@@ -97,7 +99,8 @@ dramatically. When you only want to crop the view, reach for `coord_cartesian()`
 every time.
 
 ```{r}
-#| label: coord
+#| label: fig-annotation-crop
+#| fig-cap: "Trends plot cropped to a sub-range with coord_cartesian(), which zooms the viewport without dropping data"
 dta_trends <- sample_trends_data(n = 600, seed = 42)
 p_base     <- plot(hv_trends(dta_trends))
 
@@ -130,7 +133,8 @@ Build any figure, then `print()` it and call `make_footnote()` with the source
 path. The default stamp appends a timestamp.
 
 ```{r}
-#| label: footnote_draft
+#| label: fig-annotation-footnote
+#| fig-cap: "Survival curve stamped with a draft footnote naming the source file and a timestamp"
 #| fig-width: 7
 #| fig-height: 5
 p_draft <- plot(km) +

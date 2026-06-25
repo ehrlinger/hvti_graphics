@@ -43,7 +43,8 @@ bottom-left; `c(1, 1)` is top-right. A light background box keeps it legible
 over data.
 
 ```{r}
-#| label: inside
+#| label: fig-legends
+#| fig-cap: "Grouped trends plot with the legend moved inside the panel via fractional coordinates and given a light background box"
 p_base +
   scale_colour_brewer(palette = "Set1", name = NULL) +
   scale_shape_manual(
@@ -67,7 +68,8 @@ Set `legend.position` to `"right"`, `"left"`, `"top"`, or `"bottom"`.
 multi-group figures where a corner legend would crowd the panel.
 
 ```{r}
-#| label: outside
+#| label: fig-legends-bottom
+#| fig-cap: "The same plot with the legend placed horizontally below the panel, the common choice for multi-group figures"
 p_base +
   scale_colour_brewer(palette = "Set1", name = "Group") +
   scale_shape_manual(
@@ -90,7 +92,8 @@ Alternatively, `guide = "none"` on each `scale_*()` call drops only that
 aesthetic's legend, handy when you want a colour legend but no shape legend.
 
 ```{r}
-#| label: none
+#| label: fig-legends-none
+#| fig-cap: "Single-stratum survival curve with all legends suppressed, since the axis labels already identify the group"
 dta_km <- sample_survival_data(n = 500, seed = 42)
 km     <- hv_survival(dta_km)
 

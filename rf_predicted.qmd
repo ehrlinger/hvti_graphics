@@ -53,7 +53,8 @@ subject. Plotting them together gives the bare view: every patient's predicted
 survival probability over time, drawn on one set of axes.
 
 ```{r}
-#| label: gg-rfsrc
+#| label: fig-rf_predicted
+#| fig-cap: "Out-of-bag predicted survival curves, one per patient, showing the spread of predicted risk across the cohort"
 plot(gg_rfsrc(rf)) + theme_hv_manuscript()
 ```
 
@@ -88,7 +89,8 @@ within each level of the grouping variable, giving a model-based analogue of
 stratified survival. We use `pbc` and its randomized `treatment` arm.
 
 ```{r}
-#| label: rf-by-group
+#| label: fig-rf_predicted-grouped
+#| fig-cap: "Predicted survival averaged within each treatment arm of the pbc trial, the model-based analogue of stratified survival"
 data(pbc, package = "randomForestSRC")
 rf2 <- rfsrc(Surv(days, status) ~ ., data = pbc, ntree = 100)
 plot(gg_rfsrc(rf2, by = "treatment")) + theme_hv_manuscript()
@@ -108,7 +110,8 @@ forest required, taking the time `interval`, the `censor` indicator, an optional
 `by` grouping, and the `data`.
 
 ```{r}
-#| label: gg-survival
+#| label: fig-rf_predicted-empirical
+#| fig-cap: "Empirical Kaplan-Meier survival by treatment arm computed directly from the pbc data, for comparison with the forest's predicted curves"
 gg_dta <- gg_survival(
   interval = "days",
   censor   = "status",

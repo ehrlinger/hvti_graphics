@@ -1,4 +1,4 @@
-# Spaghetti Plots
+# Spaghetti plots
 
 ```{r}
 #| label: setup
@@ -73,7 +73,8 @@ Now set sensible axis limits and breaks with the usual scale layers, then add a
 theme. The y-axis here covers the full range of AV mean gradient.
 
 ```{r}
-#| label: spaghetti_unstrat_full
+#| label: fig-spaghetti
+#| fig-cap: "One trajectory per patient for AV mean gradient over five years of follow-up"
 plot(sp) +
   scale_x_continuous(breaks = seq(0, 5, 1)) +
   scale_y_continuous(breaks = seq(0, 80, 20)) +
@@ -108,7 +109,8 @@ its stratum, then assign colours with `scale_colour_manual()`. Now you can read
 two bundles at once and compare their shapes.
 
 ```{r}
-#| label: spaghetti_sex_strat
+#| label: fig-spaghetti-strat
+#| fig-cap: "Trajectories coloured by sex stratum, so the two bundles can be compared side by side"
 plot(sp_col) +
   scale_colour_manual(
     values = c(Female = "firebrick", Male = "steelblue"),
@@ -129,7 +131,8 @@ follows the data without assuming a straight line). The individual trajectories
 stay as faint context while the smooth carries the trend.
 
 ```{r}
-#| label: spaghetti_smooth
+#| label: fig-spaghetti-smooth
+#| fig-cap: "Stratified trajectories with a per-group LOESS overlay carrying the trend while the individual lines fade to context"
 plot(sp_col, add_smooth = TRUE) +
   scale_colour_manual(
     values = c(Female = "firebrick", Male = "steelblue"),
@@ -152,7 +155,8 @@ comparison, so it earns a legend. Map a constant label to each layer and place
 the key inside the panel.
 
 ```{r}
-#| label: spaghetti_smooth_legend
+#| label: fig-spaghetti-legend
+#| fig-cap: "Patient trajectories and a LOESS trend on one panel, with a legend naming the two series"
 ggplot(dta_sp, aes(x = time, y = value)) +
   geom_line(aes(group = id, colour = "Patient trajectories"),
             linewidth = 0.3, alpha = 0.4) +
@@ -197,7 +201,8 @@ head(dta_tr)
 ```
 
 ```{r}
-#| label: trends_n_year
+#| label: fig-spaghetti-trend
+#| fig-cap: "A single annual mean series from hv_trends() for one group across the study window"
 one_grp <- dta_tr[dta_tr$group == "Group I", ]
 tr1 <- hv_trends(one_grp, group_col = NULL)
 
@@ -217,7 +222,8 @@ marker, so the figure stays readable when it is printed or photocopied in
 greyscale.
 
 ```{r}
-#| label: trends_multi_brewer
+#| label: fig-spaghetti-trend-groups
+#| fig-cap: "Annual mean series for four groups, each given a distinct colour and marker so the figure survives greyscale printing"
 tr <- hv_trends(dta_tr)
 plot(tr) +
   scale_colour_brewer(palette = "Set1", name = "Group") +
@@ -239,7 +245,8 @@ shows where the annual mean is well determined and where it rests on too few
 patients to trust.
 
 ```{r}
-#| label: trends_ribbon
+#| label: fig-spaghetti-trend-ribbon
+#| fig-cap: "The annual mean series with a confidence ribbon showing where the estimate is well determined and where it thins"
 plot(tr1, se = TRUE, alpha = 0.2) +
   scale_x_continuous(limits = c(1968, 2000), breaks = seq(1968, 2000, 4)) +
   labs(x = "Year", y = "Annual mean outcome") +

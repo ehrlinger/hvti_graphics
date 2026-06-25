@@ -40,7 +40,8 @@ random-forest chapters use, and the extra width is the point: variable priority
 earns its keep when there are far more candidates than you can eyeball.
 
 ```{r}
-#| label: varpro-fit
+#| label: fig-varpro
+#| fig-cap: "Variable priority for the top 20 predictors of the housing regression fit, with the dashed cutoff line separating selected from unselected variables"
 #| fig-height: 5.5
 set.seed(42)
 data(housing, package = "randomForestSRC")
@@ -57,12 +58,13 @@ variables. Variables whose boxes sit to the right of the cutoff are retained.
 
 ## Build it
 
-The plot above is the core figure. Two variants make it more informative.
+The plot in @fig-varpro is the core figure. Two variants make it more informative.
 Setting `faithful = TRUE` shows the per-tree importance draws as jittered points
 behind the boxplot, exposing the spread that the summary hides:
 
 ```{r}
-#| label: varpro-faithful
+#| label: fig-varpro-faithful
+#| fig-cap: "The same priority boxplots with per-tree importance draws shown as jittered points behind each box, exposing the spread the summary hides"
 #| fig-height: 5.5
 plot(gg_varpro(o, faithful = TRUE, nvar = 20)) + theme_hv_manuscript()
 ```
@@ -71,7 +73,8 @@ Setting `nvar` lower restricts the display further, handy when a wide problem
 like this one would otherwise crowd the panel and you only want the leaders:
 
 ```{r}
-#| label: varpro-nvar
+#| label: fig-varpro-nvar
+#| fig-cap: "Variable priority restricted to the top eight predictors, the leaders-only view for a crowded wide problem"
 plot(gg_varpro(o, nvar = 8)) + theme_hv_manuscript()
 ```
 
@@ -104,7 +107,8 @@ importance, so you get not just *whether* a variable matters but the direction
 and magnitude of its local linear effect.
 
 ```{r}
-#| label: beta-varpro
+#| label: fig-varpro-beta
+#| fig-cap: "Beta-refined importance for the housing regression fit, reporting lasso slope coefficients that carry direction and magnitude rather than VIMP-style scores"
 #| fig-height: 6
 plot(gg_beta_varpro(o)) + theme_hv_manuscript()
 ```
@@ -124,7 +128,8 @@ data (also from `randomForestSRC`): 198 patients, 32 predictors, and a two-level
 recurrence outcome (`N` = no recurrence, `R` = recurrence).
 
 ```{r}
-#| label: ivarpro-fit
+#| label: fig-varpro-ivarpro
+#| fig-cap: "Individual variable priority for the breast classification fit, decomposing forest importance down to each observation"
 #| fig-height: 5.5
 set.seed(42)
 data(breast, package = "randomForestSRC")
@@ -137,7 +142,8 @@ variable. You can focus on a single outcome level with `which_class` — here th
 recurrence class:
 
 ```{r}
-#| label: ivarpro-class
+#| label: fig-varpro-ivarpro-class
+#| fig-cap: "Individual variable priority focused on the recurrence class of the breast fit via the which_class argument"
 #| fig-height: 5.5
 plot(gg_ivarpro(oc, which_class = "R")) + theme_hv_manuscript()
 ```
@@ -150,7 +156,8 @@ separate which classes. This option needs a classification forest; it errors on
 the regression fit.
 
 ```{r}
-#| label: varpro-conditional
+#| label: fig-varpro-conditional
+#| fig-cap: "Conditional variable priority faceted by outcome class, showing which predictors separate which classes in the breast fit"
 #| fig-height: 5.5
 plot(gg_varpro(oc, conditional = TRUE, nvar = 15)) + theme_hv_manuscript()
 ```
@@ -163,7 +170,8 @@ construct it first with `varPro::isopro()` on the fitted forest, then pass that
 to `gg_isopro()`.
 
 ```{r}
-#| label: isopro
+#| label: fig-varpro-isopro
+#| fig-cap: "In-sample anomaly scores from an isolation forest, where higher scores flag observations the forest separates with few splits"
 iso <- isopro(object = o, ntree = 100)
 plot(gg_isopro(iso)) + theme_hv_manuscript()
 ```
@@ -195,7 +203,8 @@ the structure among the predictors themselves, for example to spot a cluster of
 collinear measurements.
 
 ```{r}
-#| label: udependent-fit
+#| label: fig-varpro-udependent
+#| fig-cap: "Unsupervised dependency graph among the numeric housing predictors, where thick edges mark strongly interdependent variables"
 #| fig-height: 5.5
 set.seed(42)
 num_cols <- names(housing)[vapply(housing, is.numeric, logical(1))]

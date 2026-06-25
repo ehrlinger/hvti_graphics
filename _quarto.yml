@@ -20,29 +20,37 @@ book:
         - packages.qmd
         - usingR.qmd
         - data_governance.qmd
-    - part: figures.qmd
+    - part: formatting.qmd
       chapters:
-        - scatter.qmd
+        - annotation.qmd
+        - themes.qmd
+        - colors.qmd
+        - legends.qmd
+    - part: timetoevent.qmd
+      chapters:
         - survival.qmd
         - hazard.qmd
-        - nnt.qmd
         - temporal_hazard.qmd
+        - nnt.qmd
+    - part: distributions.qmd
+      chapters:
         - histograms.qmd
         - density.qmd
-        - bar.qmd
         - boxplots.qmd
-        - upset.qmd
+        - bar.qmd
+    - part: relationships.qmd
+      chapters:
+        - scatter.qmd
         - spaghetti.qmd
         - postagestamp.qmd
+        - upset.qmd
     - part: specialty.qmd
       chapters:
         - consort.qmd
         - sankey.qmd
         - balance.qmd
-        - combination.qmd
-    - part: "Random forests & variable selection"
+    - part: randomforests.qmd
       chapters:
-        - randomforests.qmd
         - rf_error.qmd
         - rf_predicted.qmd
         - rf_vimp.qmd
@@ -54,14 +62,9 @@ book:
       chapters:
         - qt_tables.qmd
         - figure_tables.qmd
-    - part: formatting.qmd
-      chapters:
-        - annotation.qmd
-        - themes.qmd
-        - colors.qmd
-        - legends.qmd
     - part: publications.qmd
       chapters:
+        - combination.qmd
         - manuscripts.qmd
         - researchday.qmd
         - presentations.qmd
@@ -78,6 +81,8 @@ format:
       - cosmo
       - brand
     number-sections: true
+    toc: true
+    toc-depth: 3
   pdf:
     documentclass: scrreprt
     keep-tex: true
