@@ -204,9 +204,9 @@ p_th_surv <- ggplot() +
   labs(x = "Years since operation", y = "Survival probability") +
   theme_hv_manuscript()
 
-# Survival falls left-to-right, leaving the lower-left empty; hv_legend_inside()
-# anchors the key there automatically.
-hv_legend_inside(p_th_surv) +
+# Survival falls left-to-right, leaving the lower-left empty; pin the key there
+# with prefer = "bottomleft" (it still auto-dodges if that corner fills).
+hv_legend_inside(p_th_surv, prefer = "bottomleft") +
   theme(legend.background = element_rect(fill = "white", colour = "grey80",
                                          linewidth = 0.3))
 ```
