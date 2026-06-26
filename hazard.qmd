@@ -335,7 +335,8 @@ p_haz_grp <- plot(np_grp) +
   labs(x = "Follow-up (years)", y = "AV Peak Gradient (mmHg)") +
   theme_hv_manuscript()
 
-hv_legend_inside(p_haz_grp)
+# Rising curves leave the upper-left empty; pin the key there.
+hv_legend_inside(p_haz_grp, prefer = "topleft")
 ```
 
 ### Nonparametric ordinal-outcome curve
